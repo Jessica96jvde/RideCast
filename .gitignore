@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+
+# Virtual environments
+venv/
+env/
+
+# Streamlit
+.streamlit/
+
+# SQLite database (contains user credentials)
+auth/users.db
+
+# Model and large data files (optional - comment out if you want to include them)
+dataset/model/ridecast_lstm.keras
+dataset/data/processed/
+dataset/data/historical_ridership.csv
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
