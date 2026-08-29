@@ -1,8 +1,8 @@
 import sqlite3
 import hashlib
-from pathlib import Path
-
-DB_FILE = Path(__file__).resolve().parents[1] / "auth" / "users.db"
+import datetime
+import pandas as pd
+from backend.config import USERS_DB, FEEDBACK_DB
 
 
 def _hash(password: str) -> str:
@@ -10,7 +10,10 @@ def _hash(password: str) -> str:
 
 
 def init_db():
-    con = sqlite3.connect(DB_FILE)
+    USERS_DB.parent.mkdir(parents=True, exist_ok=True)
+    
+    # 1. Users & Allocations DB
+    con = sqlite3.connect(USERS_DB)
     cur = con.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -19,7 +22,6 @@ def init_db():
             role     TEXT NOT NULL DEFAULT 'authority'
         )
     """)
-    # seed default admin if table is empty
     cur.execute("SELECT COUNT(*) FROM users")
     if cur.fetchone()[0] == 0:
         cur.execute(
@@ -27,7 +29,6 @@ def init_db():
             ("admin", _hash("admin123"), "authority")
         )
 
-    # Allocations table
     cur.execute("""
         CREATE TABLE IF NOT EXISTS allocations (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +45,6 @@ def init_db():
         )
     """)
 
-    # Seed initial allocation history if empty
     cur.execute("SELECT COUNT(*) FROM allocations")
     if cur.fetchone()[0] == 0:
         initial_allocs = [
@@ -64,23 +64,50 @@ def init_db():
     con.commit()
     con.close()
 
+    # 2. Feedback DB
+    init_feedback_db()
+
+
+def init_feedback_db():
+    con = sqlite3.connect(FEEDBACK_DB)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            useful    TEXT NOT NULL,
+            from_stop TEXT,
+            to_stop   TEXT,
+            time_slot TEXT,
+            created   TEXT
+        )
+    """)
+    con.commit()
+    con.close()
+
 
 def verify_user(username: str, password: str) -> bool:
-    con = sqlite3.connect(DB_FILE)
+    init_db()
+    con = sqlite3.connect(USERS_DB)
     cur = con.cursor()
-    cur.execute(
-        "SELECT password FROM users WHERE username = ?", (username,)
-    )
+    cur.execute("SELECT password FROM users WHERE username = ?", (username,))
     row = cur.fetchone()
     con.close()
     return row is not None and row[0] == _hash(password)
 
 
-def save_allocation(date_str: str, service_id: str, route_name: str, bus_id: str, bus_number: str, source_depot: str, distance_km: float, reason: str, allocated_by: str = "Officer Rajesh Kumar"):
+def save_allocation(
+    date_str: str,
+    service_id: str,
+    route_name: str,
+    bus_id: str,
+    bus_number: str,
+    source_depot: str,
+    distance_km: float,
+    reason: str,
+    allocated_by: str = "Officer Rajesh Kumar"
+):
     init_db()
-    con = sqlite3.connect(DB_FILE)
+    con = sqlite3.connect(USERS_DB)
     cur = con.cursor()
-    import datetime
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cur.execute("""
         INSERT INTO allocations (date, service_id, route_name, bus_id, bus_number, source_depot, distance_km, reason, allocated_by, timestamp)
@@ -90,20 +117,39 @@ def save_allocation(date_str: str, service_id: str, route_name: str, bus_id: str
     con.close()
 
 
-def get_allocation_history():
+def get_allocation_history() -> pd.DataFrame:
     init_db()
-    import pandas as pd
-    con = sqlite3.connect(DB_FILE)
+    con = sqlite3.connect(USERS_DB)
     df = pd.read_sql_query("SELECT * FROM allocations ORDER BY id DESC", con)
     con.close()
     return df
 
 
-def get_allocations_for_date(date_str: str):
+def get_allocations_for_date(date_str: str) -> pd.DataFrame:
     init_db()
-    import pandas as pd
-    con = sqlite3.connect(DB_FILE)
+    con = sqlite3.connect(USERS_DB)
     df = pd.read_sql_query("SELECT * FROM allocations WHERE date = ? ORDER BY id DESC", con, params=(date_str,))
     con.close()
     return df
 
+
+def save_feedback(useful: bool, from_stop: str = "", to_stop: str = "", time_slot: str = ""):
+    init_feedback_db()
+    con = sqlite3.connect(FEEDBACK_DB)
+    con.execute(
+        "INSERT INTO feedback (useful, from_stop, to_stop, time_slot, created) VALUES (?,?,?,?,?)",
+        ("Yes" if useful else "No", from_stop, to_stop, time_slot, datetime.datetime.now().isoformat())
+    )
+    con.commit()
+    con.close()
+
+
+def get_all_feedback() -> list[dict]:
+    init_feedback_db()
+    con = sqlite3.connect(FEEDBACK_DB)
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute("SELECT * FROM feedback ORDER BY id DESC")
+    rows = [dict(row) for row in cur.fetchall()]
+    con.close()
+    return rows

@@ -6,19 +6,16 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 )
 
-W, H = A4
 STYLES = getSampleStyleSheet()
 
-# Color definitions
-C_PRIMARY = colors.HexColor("#344A55")
-C_ACCENT = colors.HexColor("#F29F05")
-C_SKY = colors.HexColor("#C4E5F2")
-C_CREAM = colors.HexColor("#FEF8E7")
-C_MUTED = colors.HexColor("#A6998A")
-C_DARK = colors.HexColor("#231100")
+C_PRIMARY = colors.HexColor("#1e293b")
+C_ACCENT = colors.HexColor("#f59e0b")
+C_SKY = colors.HexColor("#38bdf8")
+C_MUTED = colors.HexColor("#64748b")
+C_DARK = colors.HexColor("#0f172a")
 
 TITLE_STYLE = ParagraphStyle(
     "TitleStyle",
@@ -61,8 +58,8 @@ TABLE_STYLE_MAIN = TableStyle([
     ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
     ("FONTSIZE", (0, 0), (-1, -1), 8.5),
-    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F2FBFC")]),
-    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#DCEEF5")),
+    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
     ("ALIGN", (0, 0), (-1, -1), "LEFT"),
     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
     ("LEFTPADDING", (0, 0), (-1, -1), 6),
@@ -81,14 +78,14 @@ def _header_block(title: str, subtitle: str) -> list:
     ]
 
 
-def generate_authority_comprehensive_pdf(
+def generate_authority_pdf(
     forecast_data: dict,
     alloc_df: pd.DataFrame,
     fleet_df: pd.DataFrame,
     target_date_str: str,
     selected_route: str = "All Routes"
 ) -> bytes:
-    """Generate comprehensive authority report containing forecasts, crowd reasons, allocations, and fleet status."""
+    """Generate comprehensive authority intelligence report PDF."""
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -103,18 +100,17 @@ def generate_authority_comprehensive_pdf(
     subtitle = f"Target Date: {target_date_str} | Scope: {selected_route}"
     story += _header_block("Daily Bus Demand Forecast & Fleet Allocation Summary", subtitle)
 
-    # 1. Executive KPIs
+    # 1. Executive Summary & KPIs
     story.append(Paragraph("1. Executive Summary & KPIs", SECTION_STYLE))
-    
     total_forecasted = sum(r["expected_passengers"] for r in forecast_data.values())
     total_normal = sum(r["normal_passengers"] for r in forecast_data.values())
     total_extra_buses = sum(r["buses_required"] for r in forecast_data.values())
-    
+
     kpi_data = [
         ["Key Metric", "Value", "Notes / Details"],
         ["Total Expected Passengers", f"{total_forecasted:,}", "Aggregated demand across monitored routes"],
         ["Baseline Network Capacity", f"{total_normal:,}", "Standard scheduled capacity"],
-        ["Overall Crowd Ratio", f"{(total_forecasted / max(1, total_normal) * 100):.1f}%", "Demand relative to normal operational baseline"],
+        ["Overall Crowd Ratio", f"{(total_forecasted / max(1, total_normal) * 100):.1f}%", "Demand relative to baseline"],
         ["Smart Extra Buses Recommended", f"{total_extra_buses} Bus(es)", "Additional fleet required to prevent congestion"],
         ["Model Inference Confidence", "94.6%", "LSTM sliding window historical accuracy score"],
     ]
@@ -123,12 +119,11 @@ def generate_authority_comprehensive_pdf(
     story.append(t_kpi)
     story.append(Spacer(1, 0.4 * cm))
 
-    # 2. Route-by-Route Demand & Forecasts
+    # 2. Route Demand & Crowd Level
     story.append(Paragraph("2. Route Demand & Crowd Level Breakdown", SECTION_STYLE))
     route_table_data = [
         ["Service", "Route Name", "Normal Cap.", "Expected", "Crowd Level", "Extra Buses"]
     ]
-    
     for sid, r in forecast_data.items():
         if selected_route != "All Routes" and sid != selected_route:
             continue
@@ -140,24 +135,23 @@ def generate_authority_comprehensive_pdf(
             f"{r['crowd_level']}",
             f"{r['buses_required']} Bus(es)" if r['buses_required'] > 0 else "None"
         ])
-
     t_routes = Table(route_table_data, colWidths=[2.2 * cm, 6.8 * cm, 2.5 * cm, 2.5 * cm, 2.3 * cm, 2.2 * cm])
     t_routes.setStyle(TABLE_STYLE_MAIN)
     story.append(t_routes)
     story.append(Spacer(1, 0.4 * cm))
 
-    # 3. Crowdness Reasons & Insights
+    # 3. AI Factor Analysis & Dynamics
     story.append(Paragraph("3. AI Factor Analysis & Commuter Dynamics", SECTION_STYLE))
     for sid, r in forecast_data.items():
         if selected_route != "All Routes" and sid != selected_route:
             continue
         story.append(Paragraph(f"<b>Route {sid} ({r['route_name']}):</b>", BODY_STYLE))
         for reason in r.get("reasons", []):
-            story.append(Paragraph(f" {reason}", BODY_STYLE))
+            story.append(Paragraph(f"• {reason}", BODY_STYLE))
         story.append(Spacer(1, 0.15 * cm))
     story.append(Spacer(1, 0.25 * cm))
 
-    # 4. Bus Allocations Executed
+    # 4. Bus Allocations
     story.append(Paragraph("4. Smart Bus Allocations Executed", SECTION_STYLE))
     if not alloc_df.empty:
         date_allocs = alloc_df[alloc_df["date"] == target_date_str] if "date" in alloc_df.columns else alloc_df
@@ -204,25 +198,3 @@ def generate_authority_comprehensive_pdf(
 
     doc.build(story)
     return buf.getvalue()
-
-
-# Preserved backward-compatible methods
-def generate_summary_pdf(filtered: pd.DataFrame, route_demand: pd.DataFrame, alloc: pd.DataFrame) -> bytes:
-    forecast_mock = {
-        "S45": {"route_name": "45: Ukkadam - Saibaba Colony", "normal_passengers": 1600, "expected_passengers": 1820, "crowd_level": "High", "buses_required": 1, "reasons": ["Peak office commute", "High route density"]},
-        "S57": {"route_name": "57: Ukkadam - Saibaba Colony", "normal_passengers": 1550, "expected_passengers": 1520, "crowd_level": "Moderate", "buses_required": 0, "reasons": ["Regular weekday traffic"]},
-        "S33A": {"route_name": "33A: Gandhipuram - Singanallur", "normal_passengers": 1400, "expected_passengers": 1650, "crowd_level": "High", "buses_required": 1, "reasons": ["Industrial corridor peak"]},
-        "S48": {"route_name": "48: Gandhipuram - Ondipudur", "normal_passengers": 1450, "expected_passengers": 1390, "crowd_level": "Low", "buses_required": 0, "reasons": ["Balanced demand"]},
-    }
-    from utils.allocation_engine import get_fleet_df
-    from auth.db import get_allocation_history
-    return generate_authority_comprehensive_pdf(forecast_mock, get_allocation_history(), get_fleet_df(datetime.now().strftime("%Y-%m-%d")), datetime.now().strftime("%Y-%m-%d"), "All Routes")
-
-
-def generate_route_pdf(service_id: str, route_df: pd.DataFrame) -> bytes:
-    from utils.predict import predict_route_authority
-    from utils.allocation_engine import get_fleet_df
-    from auth.db import get_allocation_history
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    forecast_mock = {service_id: predict_route_authority(service_id, pd.Timestamp(today_str))}
-    return generate_authority_comprehensive_pdf(forecast_mock, get_allocation_history(), get_fleet_df(today_str), today_str, service_id)

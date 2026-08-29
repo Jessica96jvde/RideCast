@@ -11,9 +11,20 @@ env/
 # Streamlit
 .streamlit/
 
-# SQLite database (contains user credentials)
+# SQLite database
+*.db
+auth/*.db
 auth/users.db
+auth/feedback.db
 
+# Frontend
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+dist/
+frontend/dist/
+*.tsbuildinfo
 
 # Jupyter
 .ipynb_checkpoints/

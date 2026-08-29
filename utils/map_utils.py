@@ -7,109 +7,112 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 # Coimbatore city centre
 DEFAULT_CENTER = [11.0168, 76.9558]
 
-# Hardcoded coordinates for all 93 stops
-# (lat, lon) sourced from OpenStreetMap Nominatim
 STOP_COORDS = {
-    "ST001": [11.0018, 76.9674],
-    "ST002": [11.0000, 76.9700],
-    "ST003": [11.0010, 76.9680],
-    "ST004": [11.0020, 76.9660],
-    "ST005": [11.0030, 76.9640],
-    "ST006": [11.0025, 76.9650],
-    "ST007": [11.0040, 76.9620],
-    "ST008": [11.0050, 76.9600],
-    "ST009": [11.0060, 76.9580],
-    "ST010": [11.0070, 76.9560],
-    "ST011": [11.0080, 76.9540],
-    "ST012": [11.0090, 76.9520],
-    "ST013": [11.0100, 76.9500],
-    "ST014": [11.0110, 76.9480],
-    "ST015": [11.0120, 76.9460],
-    "ST016": [11.0130, 76.9440],
-    "ST017": [11.0140, 76.9420],
-    "ST018": [11.0150, 76.9400],
-    "ST019": [11.0160, 76.9380],
-    "ST020": [11.0170, 76.9360],
-    "ST021": [11.0180, 76.9340],
-    "ST022": [11.0190, 76.9320],
-    "ST023": [11.0200, 76.9300],
-    "ST024": [11.0210, 76.9280],
-    "ST025": [11.0220, 76.9260],
-    "ST026": [11.0230, 76.9240],
-    "ST027": [11.0240, 76.9220],
-    "ST028": [11.0250, 76.9200],
-    "ST029": [11.0260, 76.9180],
-    "ST030": [11.0270, 76.9160],
-    "ST031": [11.0280, 76.9140],
-    "ST032": [11.0290, 76.9120],
-    "ST033": [11.0300, 76.9100],
-    "ST034": [11.0310, 76.9080],
-    "ST035": [11.0320, 76.9060],
-    "ST036": [11.0330, 76.9040],
-    "ST037": [11.0340, 76.9020],
-    "ST038": [11.0350, 76.9000],
-    "ST039": [11.0360, 76.8980],
-    "ST040": [11.0370, 76.8960],
-    "ST041": [11.0380, 76.8940],
-    "ST042": [11.0390, 76.8920],
-    "ST043": [11.0400, 76.8900],
-    "ST044": [11.0410, 76.8880],
-    "ST045": [11.0420, 76.8860],
-    "ST046": [11.0430, 76.8840],
-    "ST047": [11.0440, 76.8820],
-    "ST048": [11.0450, 76.8800],
-    "ST049": [11.0460, 76.8780],
-    "ST050": [11.0115, 76.9470],
-    "ST051": [11.0035, 76.9630],
-    "ST052": [10.9990, 76.9710],
-    "ST053": [10.9980, 76.9720],
-    "ST054": [10.9970, 76.9730],
-    "ST055": [10.9960, 76.9740],
-    "ST056": [10.9950, 76.9750],
-    "ST057": [10.9940, 76.9760],
-    "ST058": [10.9930, 76.9770],
-    "ST059": [10.9920, 76.9780],
-    "ST060": [10.9910, 76.9790],
-    "ST061": [10.9900, 76.9800],
-    "ST062": [10.9890, 76.9810],
-    "ST063": [10.9880, 76.9820],
-    "ST064": [10.9870, 76.9830],
-    "ST065": [10.9860, 76.9840],
-    "ST066": [10.9850, 76.9850],
-    "ST067": [10.9840, 76.9860],
-    "ST068": [10.9830, 76.9870],
-    "ST069": [10.9820, 76.9880],
-    "ST070": [10.9810, 76.9890],
-    "ST071": [10.9800, 76.9900],
-    "ST072": [10.9790, 76.9910],
-    "ST073": [10.9780, 76.9920],
-    "ST074": [10.9770, 76.9930],
-    "ST075": [10.9760, 76.9940],
-    "ST076": [10.9750, 76.9950],
-    "ST077": [10.9970, 76.9720],
-    "ST078": [10.9960, 76.9730],
-    "ST079": [10.9950, 76.9740],
-    "ST080": [10.9940, 76.9750],
-    "ST081": [10.9930, 76.9760],
-    "ST082": [10.9920, 76.9770],
-    "ST083": [10.9910, 76.9780],
-    "ST084": [10.9900, 76.9790],
-    "ST085": [10.9890, 76.9800],
-    "ST086": [10.9880, 76.9810],
-    "ST087": [10.9870, 76.9820],
-    "ST088": [10.9860, 76.9830],
-    "ST089": [10.9850, 76.9840],
-    "ST090": [10.9840, 76.9850],
-    "ST091": [10.9830, 76.9860],
-    "ST092": [10.9820, 76.9870],
-    "ST093": [10.9810, 76.9880],
+    # ── Sathyamangalam Rd / Avinashi Rd Arterial Corridor (S45, S57) ──
+    "ST001": [11.0168, 76.9672],  # Gandhipuram Town Bus Stand
+    "ST002": [10.9904, 76.9608],  # Ukkadam Bus Terminal
+    "ST003": [10.9942, 76.9615],  # Prakasam / Oppanakara St
+    "ST004": [10.9965, 76.9625],  # Raja Street
+    "ST005": [10.9982, 76.9642],  # Manikoondu / Town Hall
+    "ST006": [10.9968, 76.9662],  # Five Corner
+    "ST007": [10.9978, 76.9685],  # Coimbatore Junction Railway Station
+    "ST008": [11.0020, 76.9695],  # Collector Office / State Bank Rd
+    "ST009": [11.0050, 76.9702],  # D.S.P. Office / Huzur Rd
+    "ST010": [11.0075, 76.9710],  # Oriental Insurance / Arts College
+    "ST011": [11.0100, 76.9705],  # C.S.I. Immanuel Church / Avinashi Rd
+    "ST012": [11.0120, 76.9695],  # C.S.I. School
+    "ST013": [11.0135, 76.9690],  # V.O.C. Park
+    "ST014": [11.0150, 76.9680],  # Park Gate / Dr Nanjappa Rd
+    "ST015": [11.0168, 76.9672],  # Gandhipuram Central
+    "ST016": [11.0210, 76.9695],  # G.P. Hospital / Sathyamangalam Rd
+    "ST017": [11.0252, 76.9722],  # Lakshmipuram
+    "ST018": [11.0288, 76.9748],  # Tex Tool / Velan Theatre
+    "ST019": [11.0325, 76.9772],  # Ganapathy Bus Stop
+    "ST020": [11.0365, 76.9798],  # Surya Hospital
+    "ST021": [11.0402, 76.9822],  # C.M.S. School
+    "ST022": [11.0440, 76.9848],  # Athipalayam Junction
+    "ST023": [11.0480, 76.9875],  # Bharathi Nagar
+    "ST024": [11.0520, 76.9902],  # Ramakrishna Mill
+    "ST025": [11.0558, 76.9928],  # L.G.B. Nagar
+    "ST026": [11.0598, 76.9955],  # Sivanandha Mills
+    "ST027": [11.0638, 76.9982],  # Anandha Kumar Mills
+    "ST028": [11.0678, 77.0008],  # S.R.P. Mills
+    "ST029": [11.0718, 77.0035],  # Amman Kovil
+    "ST030": [11.0758, 77.0062],  # G.K.S. Nagar
+    "ST031": [11.0798, 77.0088],  # Kalapatti Pirivu
+    "ST032": [11.0838, 77.0118],  # Saravanampatti Junction
+    "ST033": [11.0890, 77.0145],  # Viswasapuram
+    "ST034": [11.0945, 77.0175],  # Karattumedu
+    "ST035": [11.0995, 77.0202],  # P.P.G. IT
+    "ST036": [11.1048, 77.0232],  # S.N.S. College / Valiyampalayam
+    "ST037": [11.1100, 77.0260],  # S.N.S. College
+    "ST038": [11.1150, 77.0288],  # Sri Village Nagar
+    "ST039": [11.1205, 77.0318],  # Kurumbapalayam
+    "ST040": [11.1275, 77.0348],  # Kodia Park
+    "ST041": [11.1345, 77.0375],  # Info Institute of Engineering
+    "ST042": [11.1415, 77.0405],  # Kovilpalayam
+    "ST043": [11.1465, 77.0425],  # S.S. Kulam
+    "ST044": [11.1505, 77.0440],  # V.J. Nagar
+    "ST045": [11.1545, 77.0455],  # Kottaipalayam
+    "ST046": [11.1575, 77.0465],  # C.S.I. Colony
+    "ST047": [11.1605, 77.0475],  # Agrahara Samakulam
+    "ST048": [11.1635, 77.0485],  # Thottipalayam
+    "ST049": [11.1665, 77.0495],  # Vellamadai / Saibaba Stand
+    "ST050": [10.9855, 76.9630],  # Christ The King Church
+    "ST051": [10.9982, 76.9642],  # Town Hall Central
+
+    # ── Pollachi Rd / Eachanari / Kinathukadavu Corridor (S33A) ──
+    "ST052": [10.9790, 76.9655],  # Karumbukadai
+    "ST053": [10.9740, 76.9670],  # Athupalam
+    "ST054": [10.9680, 76.9690],  # Kurichi Pirivu
+    "ST055": [10.9630, 76.9705],  # Kurichi Housing Unit
+    "ST056": [10.9580, 76.9720],  # Iyer Hospital
+    "ST057": [10.9520, 76.9735],  # Sundarapuram
+    "ST058": [10.9470, 76.9748],  # Gandhi Nagar
+    "ST059": [10.9420, 76.9760],  # L.I.C. Colony
+    "ST060": [10.9370, 76.9772],  # Sidco Industrial Estate
+    "ST061": [10.9320, 76.9785],  # K.P.M. Matriculation School
+    "ST062": [10.9270, 76.9800],  # Rathinam College
+    "ST063": [10.9215, 76.9820],  # Eachanari Temple
+    "ST064": [10.9160, 76.9840],  # Karpagam University
+    "ST065": [10.9100, 76.9860],  # Ganesh Nagar
+    "ST066": [10.9040, 76.9880],  # Malumichampatti Junction
+    "ST067": [10.8980, 76.9900],  # Malumichampatti
+    "ST068": [10.8920, 76.9920],  # Hindustan College
+    "ST069": [10.8850, 76.9940],  # Othakal Mandapam
+    "ST070": [10.8780, 76.9960],  # Karpagam Medical College
+    "ST071": [10.8710, 76.9980],  # Premier Mills
+    "ST072": [10.8640, 77.0000],  # Polytechnic College
+    "ST073": [10.8570, 77.0020],  # Mailrapalayam
+    "ST074": [10.8500, 77.0040],  # Kinathukadavu Check Post
+    "ST075": [10.8430, 77.0060],  # Arulmigu Velayutha Swamy Temple
+    "ST076": [10.8350, 77.0080],  # Kinathukadavu Bus Stand
+
+    # ── Palakkad Rd / Kuniyamuthur / Madukkarai / KG Chavadi (S48) ──
+    "ST077": [10.9650, 76.9520],  # Kuniyamuthur High School
+    "ST078": [10.9600, 76.9490],  # Kuniyamuthur
+    "ST079": [10.9550, 76.9460],  # Nehru College
+    "ST080": [10.9500, 76.9430],  # Edayarpalayam Pirivu
+    "ST081": [10.9450, 76.9400],  # Kuniyamuthur Police Station
+    "ST082": [10.9400, 76.9370],  # B.K. Pudur
+    "ST083": [10.9350, 76.9340],  # Kovaipudur Pirivu
+    "ST084": [10.9280, 76.9300],  # Milekal
+    "ST085": [10.9200, 76.9250],  # Madukkarai Police Station
+    "ST086": [10.9120, 76.9200],  # Madukkarai Union Office
+    "ST087": [10.9040, 76.9150],  # Marappalam
+    "ST088": [10.8960, 76.9100],  # Chettipalayam Pirivu
+    "ST089": [10.8880, 76.9050],  # Indian Bank
+    "ST090": [10.8800, 76.9000],  # Thirumalayampalayam Pirivu
+    "ST091": [10.8700, 76.8920],  # K.G. Chavadi
+    "ST092": [10.8600, 76.8850],  # Pichanur
+    "ST093": [10.8500, 76.8780],  # Vanthavalam
 }
 
 SERVICE_COLORS = {
-    "S45":  "#e74c3c",
-    "S57":  "#3498db",
-    "S33A": "#2ecc71",
-    "S48":  "#f39c12",
+    "S45":  "#BF5B04",
+    "S57":  "#F28705",
+    "S33A": "#344A55",
+    "S48":  "#F29F05",
 }
 
 
@@ -123,81 +126,172 @@ def _route_stops() -> pd.DataFrame:
 
 
 def public_map(from_stop: str, to_stop: str, services: list[str]) -> folium.Map:
-    """Show selected route segment with boarding/alighting markers."""
     names = _stop_names()
-    rs    = _route_stops()
+    rs = _route_stops()
 
-    m = folium.Map(location=DEFAULT_CENTER, zoom_start=12, tiles="CartoDB positron")
+    all_coords = []
+    
+    if from_stop in STOP_COORDS and to_stop in STOP_COORDS:
+        c1, c2 = STOP_COORDS[from_stop], STOP_COORDS[to_stop]
+        mid_center = [(c1[0] + c2[0]) / 2, (c1[1] + c2[1]) / 2]
+    else:
+        mid_center = DEFAULT_CENTER
+
+    m = folium.Map(location=mid_center, zoom_start=13, tiles="CartoDB positron")
 
     for sid in services:
-        color = SERVICE_COLORS.get(sid, "#888")
+        color = SERVICE_COLORS.get(sid, "#BF5B04")
         stops = rs[rs["service_id"] == sid].sort_values("stop_order")["stop_id"].tolist()
 
         if from_stop not in stops or to_stop not in stops:
             continue
 
         i_from = stops.index(from_stop)
-        i_to   = stops.index(to_stop)
+        i_to = stops.index(to_stop)
         segment = stops[i_from: i_to + 1]
 
         coords = [STOP_COORDS[s] for s in segment if s in STOP_COORDS]
         if len(coords) < 2:
             continue
 
-        folium.PolyLine(coords, color=color, weight=4, tooltip=f"Service {sid}").add_to(m)
+        all_coords.extend(coords)
 
-        # boarding marker
-        folium.Marker(
-            coords[0],
-            tooltip=f"🟢 Board here — {names.get(from_stop, from_stop)}",
-            icon=folium.Icon(color="green", icon="play"),
+        # Route corridor line
+        folium.PolyLine(
+            coords,
+            color=color,
+            weight=6,
+            opacity=0.85,
+            tooltip=f"Service {sid} Transit Corridor"
         ).add_to(m)
 
-        # alighting marker
+        # Intermediate stop dots
+        for s in segment[1:-1]:
+            if s in STOP_COORDS:
+                folium.CircleMarker(
+                    STOP_COORDS[s],
+                    radius=4,
+                    color="#344A55",
+                    fill=True,
+                    fill_color="#C4E5F2",
+                    fill_opacity=0.9,
+                    tooltip=f"Stop: {names.get(s, s)}"
+                ).add_to(m)
+
+    # Boarding and Alighting Markers
+    if from_stop in STOP_COORDS:
         folium.Marker(
-            coords[-1],
-            tooltip=f"🔴 Alight here — {names.get(to_stop, to_stop)}",
-            icon=folium.Icon(color="red", icon="stop"),
+            STOP_COORDS[from_stop],
+            tooltip=f"Boarding Point: {names.get(from_stop, from_stop)}",
+            popup=f"<b>FROM:</b> {names.get(from_stop, from_stop)}",
+            icon=folium.Icon(color="green", icon="play")
         ).add_to(m)
+
+    if to_stop in STOP_COORDS:
+        folium.Marker(
+            STOP_COORDS[to_stop],
+            tooltip=f"Alighting Point: {names.get(to_stop, to_stop)}",
+            popup=f"<b>TO:</b> {names.get(to_stop, to_stop)}",
+            icon=folium.Icon(color="red", icon="stop")
+        ).add_to(m)
+
+    # Auto-fit bounds
+    if all_coords:
+        lats = [p[0] for p in all_coords]
+        lons = [p[1] for p in all_coords]
+        if min(lats) != max(lats) and min(lons) != max(lons):
+            m.fit_bounds([[min(lats), min(lons)], [max(lats), max(lons)]], padding=(30, 30))
 
     return m
 
 
-def authority_map(demand_by_service: dict) -> folium.Map:
-    """Show all routes; line thickness reflects demand level."""
-    rs    = _route_stops()
+def authority_route_map(service_id: str) -> folium.Map:
+    names = _stop_names()
+    rs = _route_stops()
+
+    stops_df = rs[rs["service_id"] == service_id].sort_values("stop_order")
+    stops = stops_df["stop_id"].tolist()
+    coords = [STOP_COORDS[s] for s in stops if s in STOP_COORDS]
+
+    if not coords:
+        return folium.Map(location=DEFAULT_CENTER, zoom_start=12, tiles="CartoDB positron")
+
+    mid_lat = sum(c[0] for c in coords) / len(coords)
+    mid_lon = sum(c[1] for c in coords) / len(coords)
+
+    m = folium.Map(location=[mid_lat, mid_lon], zoom_start=12, tiles="CartoDB positron")
+    color = SERVICE_COLORS.get(service_id, "#344A55")
+
+    folium.PolyLine(coords, color=color, weight=5, opacity=0.9, tooltip=f"Route {service_id}").add_to(m)
+
+    for idx, s in enumerate(stops):
+        if s in STOP_COORDS:
+            is_term = (idx == 0 or idx == len(stops) - 1)
+            radius = 6 if is_term else 3
+            folium.CircleMarker(
+                STOP_COORDS[s],
+                radius=radius,
+                color=color,
+                fill=True,
+                fill_color="#FEF8E7" if is_term else "#C4E5F2",
+                fill_opacity=1.0,
+                tooltip=f"Stop {idx+1}: {names.get(s, s)}"
+            ).add_to(m)
+
+    folium.Marker(
+        coords[0],
+        tooltip=f"Start: {names.get(stops[0], stops[0])}",
+        icon=folium.Icon(color="green", icon="play")
+    ).add_to(m)
+
+    folium.Marker(
+        coords[-1],
+        tooltip=f"End: {names.get(stops[-1], stops[-1])}",
+        icon=folium.Icon(color="red", icon="flag")
+    ).add_to(m)
+
+    lats = [c[0] for c in coords]
+    lons = [c[1] for c in coords]
+    if min(lats) != max(lats) and min(lons) != max(lons):
+        m.fit_bounds([[min(lats), min(lons)], [max(lats), max(lons)]], padding=(20, 20))
+
+    return m
+
+
+def authority_overview_map(demand_by_service: dict) -> folium.Map:
+    rs = _route_stops()
     names = _stop_names()
 
     m = folium.Map(location=DEFAULT_CENTER, zoom_start=12, tiles="CartoDB positron")
-
     max_demand = max(demand_by_service.values()) if demand_by_service else 1
 
     for sid, stops_df in rs.groupby("service_id"):
-        stops  = stops_df.sort_values("stop_order")["stop_id"].tolist()
+        stops = stops_df.sort_values("stop_order")["stop_id"].tolist()
         coords = [STOP_COORDS[s] for s in stops if s in STOP_COORDS]
         if len(coords) < 2:
             continue
 
         demand = demand_by_service.get(sid, 0)
-        weight = 2 + 6 * (demand / max_demand)
-        color  = SERVICE_COLORS.get(sid, "#888")
+        weight = 3 + 6 * (demand / max_demand)
+        color = SERVICE_COLORS.get(sid, "#344A55")
 
         folium.PolyLine(
             coords,
             color=color,
             weight=weight,
-            tooltip=f"Service {sid} — {demand} passengers",
+            opacity=0.85,
+            tooltip=f"Service {sid}: {demand:,} passengers"
         ).add_to(m)
 
-        # terminal markers
-        for stop_id, label in [(stops[0], "Start"), (stops[-1], "End")]:
+        for stop_id, label in [(stops[0], "Origin"), (stops[-1], "Destination")]:
             if stop_id in STOP_COORDS:
                 folium.CircleMarker(
                     STOP_COORDS[stop_id],
                     radius=5,
                     color=color,
                     fill=True,
-                    tooltip=f"{label}: {names.get(stop_id, stop_id)}",
+                    fill_color="#FEF8E7",
+                    tooltip=f"{label}: {names.get(stop_id, stop_id)}"
                 ).add_to(m)
 
     return m
