@@ -21,6 +21,46 @@ interface LeafletNetworkMapProps {
   routeStartCoords: Record<string, [number, number, string]>;
 }
 
+const roadCache = new Map<string, [number, number][]>();
+
+async function fetchRoadRoute(coords: [number, number][]): Promise<[number, number][]> {
+  if (coords.length < 2) return coords;
+  const cacheKey = coords.map((c) => `${c[0].toFixed(4)},${c[1].toFixed(4)}`).join(";");
+  if (roadCache.has(cacheKey)) {
+    return roadCache.get(cacheKey)!;
+  }
+
+  try {
+    let sampled = coords;
+    if (coords.length > 12) {
+      const step = (coords.length - 1) / 10;
+      sampled = [coords[0]];
+      for (let i = 1; i < 10; i++) {
+        sampled.push(coords[Math.round(i * step)]);
+      }
+      sampled.push(coords[coords.length - 1]);
+    }
+
+    const locString = sampled.map((c) => `${c[1].toFixed(5)},${c[0].toFixed(5)}`).join(";");
+    const url = `https://router.project-osrm.org/route/v1/driving/${locString}?overview=full&geometries=geojson`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(3500) });
+    if (!res.ok) return coords;
+    const data = await res.json();
+    if (data.routes && data.routes.length > 0 && data.routes[0].geometry?.coordinates) {
+      const roadCoords: [number, number][] = data.routes[0].geometry.coordinates.map(
+        (pt: [number, number]) => [pt[1], pt[0]]
+      );
+      if (roadCoords.length > 1) {
+        roadCache.set(cacheKey, roadCoords);
+        return roadCoords;
+      }
+    }
+    return coords;
+  } catch (e) {
+    return coords;
+  }
+}
+
 export default function LeafletNetworkMap({
   selectedService,
   routeForecasts,
@@ -37,7 +77,7 @@ export default function LeafletNetworkMap({
 
     let isMounted = true;
 
-    import("leaflet").then((L) => {
+    import("leaflet").then(async (L) => {
       if (!isMounted || !mapContainerRef.current) return;
 
       if (mapInstanceRef.current) {
@@ -68,19 +108,32 @@ export default function LeafletNetworkMap({
           ? Object.keys(routeGeometry)
           : [selectedService];
 
-      serviceIds.forEach((sid) => {
+      for (const sid of serviceIds) {
         const geom = routeGeometry[sid];
-        if (!geom || !geom.coordinates || geom.coordinates.length < 2) return;
+        if (!geom || !geom.coordinates || geom.coordinates.length < 2) continue;
 
         allCoords.push(...geom.coordinates);
 
+        const roadPoints = await fetchRoadRoute(geom.coordinates);
+        if (!isMounted) return;
+
         const forecast = routeForecasts ? routeForecasts[sid] : null;
         const demand = forecast ? forecast.expected_passengers : 1500;
-        const weight = selectedService === sid ? 7 : 4.5;
-        const opacity = selectedService === "All Routes" || selectedService === sid ? 0.9 : 0.35;
+        const isSelected = selectedService === "All Routes" || selectedService === sid;
+        const weight = selectedService === sid ? 7 : 5;
+        const opacity = isSelected ? 0.95 : 0.4;
 
-        // Corridor polyline
-        const polyline = L.polyline(geom.coordinates, {
+        // 1. Glowing Halo underlay along the road
+        L.polyline(roadPoints, {
+          color: geom.color || "#38bdf8",
+          weight: weight + 5,
+          opacity: isSelected ? 0.35 : 0.1,
+          lineCap: "round",
+          lineJoin: "round",
+        }).addTo(map);
+
+        // 2. Continuous bold route corridor line
+        const polyline = L.polyline(roadPoints, {
           color: geom.color || "#38bdf8",
           weight: weight,
           opacity: opacity,
@@ -89,72 +142,63 @@ export default function LeafletNetworkMap({
         }).addTo(map);
 
         polyline.bindPopup(`
-          <div class="p-2">
-            <h4 class="font-bold text-sky-400 text-sm">Route ${sid}</h4>
-            <div class="text-xs text-slate-300 mt-1">
-              <strong>Forecasted Demand:</strong> ${demand.toLocaleString()} passengers<br/>
-              <strong>Status:</strong> ${forecast ? forecast.crowd_level : "Normal"} ${forecast ? forecast.crowd_icon : "🟢"}<br/>
-              <strong>Extra Buses:</strong> ${forecast ? forecast.buses_required : 0} units
+          <div class="p-2 font-sans">
+            <h4 class="font-bold text-sky-400 text-sm">Bus Service ${sid} Corridor</h4>
+            <div class="text-xs text-slate-300 mt-1 space-y-1">
+              <div><strong>Forecasted Demand:</strong> ${demand.toLocaleString()} passengers</div>
+              <div><strong>Status:</strong> ${forecast ? forecast.crowd_level : "Normal"} ${forecast ? forecast.crowd_icon : "🟢"}</div>
+              <div><strong>Extra Fleet Required:</strong> ${forecast ? forecast.buses_required : 0} units</div>
             </div>
           </div>
         `);
 
-        // Start and end terminal markers
-        if (geom.stops.length > 0) {
-          const startId = geom.stops[0];
-          const endId = geom.stops[geom.stops.length - 1];
+        // If extra bus is required or allocated: Draw a prominent Dispatch Trajectory Line from nearest depot
+        if (forecast && (forecast.buses_required > 0 || forecast.crowd_level === "High")) {
+          const originCoord = roadPoints[0];
+          const nearestDepotCoord: [number, number] =
+            sid === "S45" || sid === "S52"
+              ? [10.9904, 76.9608] // Ukkadam Depot
+              : sid === "S33A" || sid === "S95"
+              ? [10.9760, 76.9940] // Singanallur Depot
+              : [11.0025, 76.9665]; // Gandhipuram Depot
 
-          if (stopCoords[startId]) {
-            L.circleMarker(stopCoords[startId], {
-              radius: 6,
-              color: "#10b981",
-              fillColor: "#10b981",
-              fillOpacity: 1,
-              weight: 2,
+          if (originCoord) {
+            L.polyline([nearestDepotCoord, originCoord], {
+              color: "#f59e0b",
+              weight: 4,
+              dashArray: "6, 8",
+              opacity: 0.9,
+              lineCap: "round",
             })
               .addTo(map)
-              .bindTooltip(`Origin: ${stopNames[startId] || startId}`);
-          }
-
-          if (stopCoords[endId]) {
-            L.circleMarker(stopCoords[endId], {
-              radius: 6,
-              color: "#ef4444",
-              fillColor: "#ef4444",
-              fillOpacity: 1,
-              weight: 2,
-            })
-              .addTo(map)
-              .bindTooltip(`Terminus: ${stopNames[endId] || endId}`);
+              .bindTooltip(`⚡ Extra Fleet Dispatch Line (${sid})`, { sticky: true });
           }
         }
-      });
+      }
 
-      // Plot Major Depot Hubs
+      // Major Depot Hub Lines & Labels
       const depots = [
-        { name: "Ukkadam Depot", lat: 11.0005, lon: 76.9695, color: "#f59e0b" },
-        { name: "Gandhipuram Depot", lat: 11.0025, lon: 76.9665, color: "#38bdf8" },
+        { name: "Ukkadam Depot", lat: 10.9904, lon: 76.9608, color: "#f59e0b" },
+        { name: "Gandhipuram Depot", lat: 11.0168, lon: 76.9672, color: "#38bdf8" },
         { name: "Singanallur Depot", lat: 10.9760, lon: 76.9940, color: "#10b981" },
         { name: "Ondipudur Depot", lat: 10.9820, lon: 76.9870, color: "#a855f7" },
-        { name: "Saibaba Colony Stand", lat: 11.0455, lon: 76.8790, color: "#ec4899" },
       ];
 
       depots.forEach((depot) => {
-        const depotIcon = L.divIcon({
-          className: "depot-map-marker",
-          html: `<div style="background-color: ${depot.color}; width: 14px; height: 14px; border-radius: 3px; border: 2px solid #ffffff; box-shadow: 0 0 8px ${depot.color};"></div>`,
-          iconSize: [14, 14],
-          iconAnchor: [7, 7],
+        allCoords.push([depot.lat, depot.lon]);
+        const depotLabel = L.divIcon({
+          className: "depot-map-label",
+          html: `<div style="background-color: #191c22; color: #EDDECB; border: 1.5px solid ${depot.color}; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 800; white-space: nowrap; box-shadow: 0 0 10px rgba(0,0,0,0.5);">🏢 ${depot.name}</div>`,
+          iconSize: [110, 24],
+          iconAnchor: [55, 12],
         });
 
-        L.marker([depot.lat, depot.lon], { icon: depotIcon })
-          .addTo(map)
-          .bindPopup(`<strong>🏢 ${depot.name}</strong><br/><span class="text-xs text-slate-400">Fleet Dispatch Hub</span>`);
+        L.marker([depot.lat, depot.lon], { icon: depotLabel }).addTo(map);
       });
 
       if (allCoords.length > 1) {
         const bounds = L.latLngBounds(allCoords);
-        map.fitBounds(bounds, { padding: [30, 30] });
+        map.fitBounds(bounds, { padding: [35, 35] });
       }
     });
 
@@ -170,16 +214,6 @@ export default function LeafletNetworkMap({
   return (
     <div className="relative w-full h-[450px] rounded-2xl overflow-hidden border border-[#6B8D8A]/30 shadow-md isolate z-10">
       <div ref={mapContainerRef} className="w-full h-full" />
-      <div className="absolute top-3 right-3 z-20 bg-[#1f2329]/95 backdrop-blur-md border border-[#6B8D8A]/40 px-3.5 py-2 rounded-2xl text-xs flex flex-wrap items-center gap-3 text-[#EDDECB] shadow-xl">
-        <span className="font-black text-[#F3B763]">Corridors:</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#AF4B47]"></span> S45</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#F3B763]"></span> S57</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#96BCBB]"></span> S33A</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#6B8D8A]"></span> S48</span>
-        <span className="border-l border-[#6B8D8A]/40 pl-2 flex items-center gap-1">
-          <span className="w-2.5 h-2.5 bg-[#E4C964] rounded-sm"></span> Depot Hubs
-        </span>
-      </div>
     </div>
   );
 }

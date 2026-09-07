@@ -24,6 +24,7 @@ def get_stops():
             "stop_name": row["stop_name"],
             "lat": coords[0],
             "lon": coords[1],
+            "corridor": row.get("corridor", "Coimbatore Metropolitan"),
         })
     return stops
 
@@ -44,6 +45,9 @@ def get_routes():
             "origin_name": info.get("origin_name", ""),
             "dest_name": info.get("dest_name", ""),
             "base_daily_normal": info.get("base_daily_normal", 1500),
+            "total_distance_km": float(row.get("total_distance_km", 18.5)),
+            "estimated_journey_time_min": int(row.get("estimated_journey_time_min", 45)),
+            "total_stops": int(row.get("total_stops", 30)),
             "color": SERVICE_COLORS.get(sid, "#38bdf8"),
         })
     return routes

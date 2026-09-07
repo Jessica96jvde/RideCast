@@ -20,7 +20,7 @@ class AllocationRequest(BaseModel):
     service_id: str
     bus_id: str
     reason: str
-    allocated_by: Optional[str] = "Officer Rajesh Kumar"
+    allocated_by: Optional[str] = "Ravi (Transport Authority)"
 
 
 @router.get("/overview")
@@ -41,15 +41,14 @@ def get_authority_overview(date: str = Query(...)):
 
     return {
         "date": date,
-        "kpis": {
-            "total_expected_passengers": total_expected,
-            "total_normal_capacity": total_normal,
-            "crowd_ratio_pct": crowd_ratio,
-            "total_extra_buses_required": total_buses_needed,
-            "model_confidence_score": 94.6,
-            "fleet_total": total_fleet,
-            "fleet_idle": idle_count,
-            "fleet_allocated": allocated_count
+        "total_expected_passengers": total_expected,
+        "total_normal_capacity": total_normal,
+        "total_buses_needed": total_buses_needed,
+        "crowd_ratio_pct": crowd_ratio,
+        "fleet_status": {
+            "total": total_fleet,
+            "idle": idle_count,
+            "allocated": allocated_count
         },
         "routes": routes_forecast
     }
@@ -79,7 +78,7 @@ def allocate_bus(req: AllocationRequest):
         service_id=req.service_id,
         bus_id=req.bus_id,
         reason=req.reason,
-        allocated_by=req.allocated_by or "Officer Rajesh Kumar"
+        allocated_by=req.allocated_by or "Ravi (Transport Authority)"
     )
     if not success:
         raise HTTPException(status_code=400, detail="Failed to allocate bus. Bus ID not found.")

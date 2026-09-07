@@ -3,6 +3,7 @@ export interface Stop {
   stop_name: string;
   lat: number;
   lon: number;
+  corridor?: string;
 }
 
 export interface RouteMeta {
@@ -14,6 +15,9 @@ export interface RouteMeta {
   origin_name: string;
   dest_name: string;
   base_daily_normal: number;
+  total_distance_km?: number;
+  estimated_journey_time_min?: number;
+  total_stops?: number;
   color: string;
 }
 
@@ -34,6 +38,19 @@ export interface DemandPrediction {
   inbound_pct: number;
   outbound_pct: number;
   capacity: number;
+  confidence_score?: number;
+  confidence_text?: string;
+  reason?: string;
+  is_allocated?: boolean;
+  allocated_bus_info?: {
+    bus_id: string;
+    bus_number: string;
+    source_depot: string;
+    distance_km?: number;
+    reason: string;
+    allocated_by: string;
+    timestamp: string;
+  } | null;
   available_services?: string[];
   error?: string;
 }
@@ -72,6 +89,20 @@ export interface AuthorityKPIs {
   fleet_allocated: number;
 }
 
+export interface TripSlotForecast {
+  slot_id: string;
+  time: string;
+  label: string;
+  title: string;
+  passengers: number;
+  capacity: number;
+  occupancy_pct: number;
+  crowd_level: "Low" | "Moderate" | "High";
+  crowd_icon: string;
+  crowd_color: string;
+  needs_extra_bus: boolean;
+}
+
 export interface AuthorityRouteForecast {
   service_id: string;
   route_name: string;
@@ -89,6 +120,7 @@ export interface AuthorityRouteForecast {
   confidence_score: number;
   last_allocated_bus: string;
   reasons: string[];
+  trip_slots?: TripSlotForecast[];
 }
 
 export interface AuthorityOverview {

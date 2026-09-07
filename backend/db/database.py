@@ -40,7 +40,7 @@ def init_db():
             source_depot TEXT NOT NULL,
             distance_km  REAL NOT NULL,
             reason       TEXT NOT NULL,
-            allocated_by TEXT NOT NULL DEFAULT 'Officer Rajesh Kumar',
+            allocated_by TEXT NOT NULL DEFAULT 'Ravi (Transport Authority)',
             timestamp    TEXT NOT NULL
         )
     """)
@@ -48,13 +48,13 @@ def init_db():
     cur.execute("SELECT COUNT(*) FROM allocations")
     if cur.fetchone()[0] == 0:
         initial_allocs = [
-            ("2026-08-20", "S45", "45: Ukkadam ↔ Saibaba Colony", "BUS-205", "TN-38-N-2450", "Ukkadam Depot", 1.2, "Heavy morning commuter surge (08:00–10:00)", "Officer Rajesh Kumar", "2026-08-20 07:45:00"),
-            ("2026-08-21", "S57", "57: Ukkadam ↔ Saibaba Colony", "BUS-108", "TN-38-N-1892", "Gandhipuram Depot", 3.4, "Rainfall surge and school reopening rush", "Officer Rajesh Kumar", "2026-08-21 08:10:00"),
-            ("2026-08-22", "S33A", "33A: Gandhipuram ↔ Singanallur", "BUS-301", "TN-38-N-3104", "Singanallur Depot", 2.1, "Evening weekend traffic peak (17:00–19:00)", "Officer Rajesh Kumar", "2026-08-22 16:30:00"),
-            ("2026-08-23", "S48", "48: Gandhipuram ↔ Ondipudur", "BUS-150", "TN-38-N-1505", "Ondipudur Depot", 2.8, "Sunday festival shopping crowd at Town Hall", "Officer Rajesh Kumar", "2026-08-23 11:15:00"),
-            ("2026-08-24", "S45", "45: Ukkadam ↔ Saibaba Colony", "BUS-112", "TN-38-N-1120", "Saibaba Colony Stand", 1.8, "Monday morning office rush hour", "Officer Rajesh Kumar", "2026-08-24 07:50:00"),
-            ("2026-08-25", "S57", "57: Ukkadam ↔ Saibaba Colony", "BUS-220", "TN-38-N-2201", "Town Hall Terminus", 2.0, "High passenger density on shared corridor", "Officer Rajesh Kumar", "2026-08-25 08:30:00"),
-            ("2026-08-25", "S33A", "33A: Gandhipuram ↔ Singanallur", "BUS-305", "TN-38-N-3058", "Ganapathy Stand", 4.2, "Evening office departure congestion", "Officer Rajesh Kumar", "2026-08-25 17:15:00"),
+            ("2026-08-20", "S45", "45: Ukkadam ↔ Vellamadai", "BUS-205", "TN-38-N-2450", "Ukkadam Depot", 1.2, "Heavy morning commuter surge (08:00–10:00)", "Ravi (Transport Authority)", "2026-08-20 07:45:00"),
+            ("2026-08-21", "S57", "57: Ukkadam ↔ Vellamadai", "BUS-108", "TN-38-N-1892", "Gandhipuram Depot", 3.4, "Rainfall surge and school reopening rush", "Ravi (Transport Authority)", "2026-08-21 08:10:00"),
+            ("2026-08-22", "S33A", "33A: Gandhipuram ↔ Kinathukadavu", "BUS-301", "TN-38-N-3104", "Singanallur Depot", 2.1, "Evening weekend traffic peak (17:00–19:00)", "Ravi (Transport Authority)", "2026-08-22 16:30:00"),
+            ("2026-08-23", "S48", "48: Gandhipuram ↔ Vanthavalam", "BUS-150", "TN-38-N-1505", "Ondipudur Depot", 2.8, "Sunday festival shopping crowd at Town Hall", "Ravi (Transport Authority)", "2026-08-23 11:15:00"),
+            ("2026-08-24", "S45", "45: Ukkadam ↔ Vellamadai", "BUS-112", "TN-38-N-1120", "Saibaba Colony Stand", 1.8, "Monday morning office rush hour", "Ravi (Transport Authority)", "2026-08-24 07:50:00"),
+            ("2026-08-25", "S57", "57: Ukkadam ↔ Vellamadai", "BUS-220", "TN-38-N-2201", "Town Hall Terminus", 2.0, "High passenger density on shared corridor", "Ravi (Transport Authority)", "2026-08-25 08:30:00"),
+            ("2026-08-25", "S33A", "33A: Gandhipuram ↔ Kinathukadavu", "BUS-305", "TN-38-N-3058", "Ganapathy Stand", 4.2, "Evening office departure congestion", "Ravi (Transport Authority)", "2026-08-25 17:15:00"),
         ]
         cur.executemany("""
             INSERT INTO allocations (date, service_id, route_name, bus_id, bus_number, source_depot, distance_km, reason, allocated_by, timestamp)

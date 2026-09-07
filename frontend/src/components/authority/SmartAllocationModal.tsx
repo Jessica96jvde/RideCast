@@ -71,7 +71,7 @@ export default function SmartAllocationModal({
         service_id: serviceId,
         bus_id: selectedBusId,
         reason: reason,
-        allocated_by: "Officer Rajesh Kumar",
+        allocated_by: "Ravi (Transport Authority)",
       });
       onAllocationSuccess();
       onClose();

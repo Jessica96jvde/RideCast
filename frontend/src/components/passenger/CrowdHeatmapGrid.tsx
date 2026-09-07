@@ -35,18 +35,10 @@ export default function CrowdHeatmapGrid({
     <div className="bg-[#1f2329] rounded-3xl p-5 shadow-2xl border border-[#6B8D8A]/30 text-[#EDDECB]">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-black text-[#EDDECB] flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[#F3B763]" />
-              Departure Time Crowd Timeline
-            </h3>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#96BCBB]/15 text-[#96BCBB] border border-[#96BCBB]/30">
-              6 Daily Windows
-            </span>
-          </div>
-          <p className="text-xs text-[#B5C3C4] mt-0.5 font-medium">
-            Compare expected bus crowd levels across the day to optimize your departure
-          </p>
+          <h3 className="text-base font-black text-[#EDDECB] flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#F3B763]" />
+            Departure Time Crowd Timeline
+          </h3>
         </div>
 
         {/* AI Optimal Recommendation Tag */}
@@ -106,7 +98,7 @@ export default function CrowdHeatmapGrid({
                     {slot.crowd_level}
                   </span>
                   <span className="text-[11px] font-mono text-[#EDDECB] font-bold">
-                    {slot.outbound} pax
+                    {slot.outbound} passengers
                   </span>
                 </div>
 

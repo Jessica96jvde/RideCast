@@ -16,48 +16,48 @@ STOP_COORDS = {
     "ST005": [10.9982, 76.9642],  # Manikoondu / Town Hall
     "ST006": [10.9968, 76.9662],  # Five Corner
     "ST007": [10.9978, 76.9685],  # Coimbatore Junction Railway Station
-    "ST008": [11.0020, 76.9695],  # Collector Office / State Bank Rd
-    "ST009": [11.0050, 76.9702],  # D.S.P. Office / Huzur Rd
-    "ST010": [11.0075, 76.9710],  # Oriental Insurance / Arts College
-    "ST011": [11.0100, 76.9705],  # C.S.I. Immanuel Church / Avinashi Rd
-    "ST012": [11.0120, 76.9695],  # C.S.I. School
-    "ST013": [11.0135, 76.9690],  # V.O.C. Park
-    "ST014": [11.0150, 76.9680],  # Park Gate / Dr Nanjappa Rd
+    "ST008": [11.0015, 76.9688],  # Collector Office / State Bank Rd
+    "ST009": [11.0048, 76.9698],  # D.S.P. Office / Huzur Rd
+    "ST010": [11.0078, 76.9705],  # Oriental Insurance / Arts College
+    "ST011": [11.0098, 76.9702],  # C.S.I. Immanuel Church / Avinashi Rd
+    "ST012": [11.0118, 76.9690],  # C.S.I. School / Dr Nanjappa Rd
+    "ST013": [11.0138, 76.9682],  # V.O.C. Park / Dr Nanjappa Rd
+    "ST014": [11.0152, 76.9678],  # Park Gate / Dr Nanjappa Rd
     "ST015": [11.0168, 76.9672],  # Gandhipuram Central
     "ST016": [11.0210, 76.9695],  # G.P. Hospital / Sathyamangalam Rd
-    "ST017": [11.0252, 76.9722],  # Lakshmipuram
-    "ST018": [11.0288, 76.9748],  # Tex Tool / Velan Theatre
-    "ST019": [11.0325, 76.9772],  # Ganapathy Bus Stop
-    "ST020": [11.0365, 76.9798],  # Surya Hospital
-    "ST021": [11.0402, 76.9822],  # C.M.S. School
-    "ST022": [11.0440, 76.9848],  # Athipalayam Junction
-    "ST023": [11.0480, 76.9875],  # Bharathi Nagar
-    "ST024": [11.0520, 76.9902],  # Ramakrishna Mill
-    "ST025": [11.0558, 76.9928],  # L.G.B. Nagar
-    "ST026": [11.0598, 76.9955],  # Sivanandha Mills
-    "ST027": [11.0638, 76.9982],  # Anandha Kumar Mills
-    "ST028": [11.0678, 77.0008],  # S.R.P. Mills
-    "ST029": [11.0718, 77.0035],  # Amman Kovil
-    "ST030": [11.0758, 77.0062],  # G.K.S. Nagar
-    "ST031": [11.0798, 77.0088],  # Kalapatti Pirivu
-    "ST032": [11.0838, 77.0118],  # Saravanampatti Junction
-    "ST033": [11.0890, 77.0145],  # Viswasapuram
-    "ST034": [11.0945, 77.0175],  # Karattumedu
-    "ST035": [11.0995, 77.0202],  # P.P.G. IT
-    "ST036": [11.1048, 77.0232],  # S.N.S. College / Valiyampalayam
-    "ST037": [11.1100, 77.0260],  # S.N.S. College
-    "ST038": [11.1150, 77.0288],  # Sri Village Nagar
-    "ST039": [11.1205, 77.0318],  # Kurumbapalayam
-    "ST040": [11.1275, 77.0348],  # Kodia Park
-    "ST041": [11.1345, 77.0375],  # Info Institute of Engineering
-    "ST042": [11.1415, 77.0405],  # Kovilpalayam
-    "ST043": [11.1465, 77.0425],  # S.S. Kulam
-    "ST044": [11.1505, 77.0440],  # V.J. Nagar
-    "ST045": [11.1545, 77.0455],  # Kottaipalayam
-    "ST046": [11.1575, 77.0465],  # C.S.I. Colony
-    "ST047": [11.1605, 77.0475],  # Agrahara Samakulam
-    "ST048": [11.1635, 77.0485],  # Thottipalayam
-    "ST049": [11.1665, 77.0495],  # Vellamadai / Saibaba Stand
+    "ST017": [11.0250, 76.9715],  # Lakshmipuram
+    "ST018": [11.0290, 76.9735],  # Tex Tool / Velan Theatre
+    "ST019": [11.0330, 76.9755],  # Ganapathy Bus Stop
+    "ST020": [11.0370, 76.9775],  # Surya Hospital
+    "ST021": [11.0410, 76.9795],  # C.M.S. School
+    "ST022": [11.0450, 76.9815],  # Athipalayam Junction
+    "ST023": [11.0490, 76.9835],  # Bharathi Nagar
+    "ST024": [11.0530, 76.9855],  # Ramakrishna Mill
+    "ST025": [11.0570, 76.9875],  # L.G.B. Nagar
+    "ST026": [11.0610, 76.9895],  # Sivanandha Mills
+    "ST027": [11.0650, 76.9915],  # Anandha Kumar Mills
+    "ST028": [11.0690, 76.9935],  # S.R.P. Mills
+    "ST029": [11.0730, 76.9955],  # Amman Kovil
+    "ST030": [11.0770, 76.9975],  # G.K.S. Nagar
+    "ST031": [11.0810, 76.9995],  # Kalapatti Pirivu
+    "ST032": [11.0850, 77.0015],  # Saravanampatti Junction
+    "ST033": [11.0900, 77.0040],  # Viswasapuram
+    "ST034": [11.0950, 77.0065],  # Karattumedu
+    "ST035": [11.1000, 77.0090],  # P.P.G. IT
+    "ST036": [11.1050, 77.0115],  # S.N.S. College / Valiyampalayam
+    "ST037": [11.1100, 77.0140],  # S.N.S. College
+    "ST038": [11.1150, 77.0165],  # Sri Village Nagar
+    "ST039": [11.1205, 77.0195],  # Kurumbapalayam
+    "ST040": [11.1275, 77.0230],  # Kodia Park
+    "ST041": [11.1345, 77.0265],  # Info Institute of Engineering
+    "ST042": [11.1415, 77.0305],  # Kovilpalayam
+    "ST043": [11.1465, 77.0335],  # S.S. Kulam
+    "ST044": [11.1505, 77.0360],  # V.J. Nagar
+    "ST045": [11.1545, 77.0385],  # Kottaipalayam
+    "ST046": [11.1575, 77.0405],  # C.S.I. Colony
+    "ST047": [11.1605, 77.0425],  # Agrahara Samakulam
+    "ST048": [11.1635, 77.0445],  # Thottipalayam
+    "ST049": [11.1665, 77.0465],  # Vellamadai / Saibaba Stand
     "ST050": [10.9855, 76.9630],  # Christ The King Church
     "ST051": [10.9982, 76.9642],  # Town Hall Central
 
@@ -113,6 +113,18 @@ SERVICE_COLORS = {
     "S57":  "#F28705",
     "S33A": "#344A55",
     "S48":  "#F29F05",
+    "S52":  "#38bdf8",
+    "S95":  "#10b981",
+    "S1A":  "#8b5cf6",
+    "S109": "#ec4899",
+    "S3B":  "#f97316",
+    "S25":  "#06b6d4",
+    "S91":  "#14b8a6",
+    "S4B":  "#eab308",
+    "S13B": "#a855f7",
+    "S75":  "#6366f1",
+    "S64":  "#ef4444",
+    "S1":   "#84cc16",
 }
 
 

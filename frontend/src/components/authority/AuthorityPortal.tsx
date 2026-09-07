@@ -111,6 +111,11 @@ export default function AuthorityPortal({
         />
       )}
 
+      {/* 4. Generate Report Tab (Completely Empty) */}
+      {authoritySubTab === "report" && (
+        <div className="w-full min-h-[400px]" />
+      )}
+
       {/* Smart Allocation Modal */}
       {allocateServiceId && (
         <SmartAllocationModal

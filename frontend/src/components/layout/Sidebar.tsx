@@ -154,43 +154,6 @@ export default function Sidebar({
                 <TrendingUp className="w-4 h-4 text-[#F3B763]" />
                 <span>Forecast</span>
               </button>
-
-              {/* Sub-routes under Forecast (Matching Sketch 3 Sidebar: Route 1, Route 2, Route 3...) */}
-              {authoritySubTab === "forecast" && hasAuthorityForecast && (
-                <div className="pl-4 pt-1 space-y-1 animate-fadeIn">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedAuthorityRoute?.("All Routes")}
-                    className={`w-full text-left px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
-                      selectedAuthorityRoute === "All Routes"
-                        ? "bg-[#F3B763]/25 text-[#F3B763] border border-[#F3B763]/40 font-black"
-                        : "text-[#B5C3C4] hover:text-[#EDDECB] hover:bg-[#252a32]"
-                    }`}
-                  >
-                    • All Routes
-                  </button>
-                  {AUTHORITY_ROUTES.map((route) => {
-                    const isSelected = selectedAuthorityRoute === route.code;
-                    return (
-                      <button
-                        key={route.id}
-                        type="button"
-                        onClick={() => setSelectedAuthorityRoute?.(route.code)}
-                        className={`w-full text-left px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-between ${
-                          isSelected
-                            ? "bg-[#F3B763] text-[#121417] font-black shadow-md"
-                            : "text-[#B5C3C4] hover:text-[#EDDECB] hover:bg-[#252a32]"
-                        }`}
-                      >
-                        <span>{route.label}</span>
-                        <span className="font-mono text-[10px] opacity-80 font-normal">
-                          ({route.code})
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
             </div>
 
             {/* 3. Idle Buses */}
@@ -210,8 +173,12 @@ export default function Sidebar({
             {/* 4. Generate Report */}
             <button
               type="button"
-              onClick={handleDownloadReport}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider text-[#B5C3C4] hover:text-[#EDDECB] hover:bg-[#252a32] transition-all cursor-pointer group"
+              onClick={() => setAuthoritySubTab?.("report")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer group ${
+                authoritySubTab === "report"
+                  ? "bg-[#AF4B47] text-[#EDDECB] shadow-lg shadow-[#AF4B47]/25 ring-2 ring-[#EDDECB]/30"
+                  : "text-[#B5C3C4] hover:text-[#EDDECB] hover:bg-[#252a32]"
+              }`}
             >
               <FileText className="w-4 h-4 text-[#96BCBB] group-hover:text-[#F3B763] transition-colors" />
               <span>Generate report</span>
@@ -269,12 +236,9 @@ export default function Sidebar({
           {/* 6 TIME SLOT COLOR PILLS (#CA8D53 Monochromatic Scale) */}
           {hasActiveSearch && (
             <div className="mt-6 pt-4 border-t border-[#6B8D8A]/20 animate-fadeIn">
-              <div className="flex items-center justify-between mb-2.5">
+              <div className="mb-2.5">
                 <span className="text-[11px] font-black text-[#EDDECB] uppercase tracking-wider">
                   TIME SLOTS
-                </span>
-                <span className="text-[9px] font-bold text-[#CA8D53] uppercase tracking-tight">
-                  #CA8D53 Scale
                 </span>
               </div>
 
@@ -308,7 +272,7 @@ export default function Sidebar({
                         </span>
                       </div>
                       <span className="text-[10px] font-mono font-bold opacity-95">
-                        {slotForecast ? `${slotForecast.outbound} pax` : slotDef.fullLabel}
+                        {slotForecast ? `${slotForecast.outbound} passengers` : slotDef.fullLabel}
                       </span>
                     </button>
                   );

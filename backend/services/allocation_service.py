@@ -82,7 +82,7 @@ def execute_allocation(
     service_id: str,
     bus_id: str,
     reason: str,
-    allocated_by: str = "Officer Rajesh Kumar"
+    allocated_by: str = "Ravi (Transport Authority)"
 ) -> bool:
     df = pd.read_csv(BUS_FILE)
     match = df[df["bus_id"] == bus_id]

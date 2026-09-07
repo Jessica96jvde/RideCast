@@ -98,7 +98,7 @@ export default function Navbar({
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-medium">
                 <UserCheck className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Officer Rajesh</span>
+                <span className="hidden sm:inline font-bold">Ravi (Transport Authority)</span>
               </div>
               <button
                 onClick={onLogout}

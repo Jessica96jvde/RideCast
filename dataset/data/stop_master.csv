@@ -1,94 +1,94 @@
-stop_id,stop_name
-ST001,Gandhipuram Town Bus Stand
-ST002,Ukkadam
-ST003,Prakasam
-ST004,Raja Street
-ST005,Manikoondu / Town Hall
-ST006,Five Corner
-ST007,Railway Station
-ST008,Collector Office
-ST009,D.S.P. Office
-ST010,Oriental Insurance
-ST011,C.S.I. Immanuel Church
-ST012,C.S.I. School
-ST013,V.O.C. Park
-ST014,Park Gate
-ST015,Gandhipuram Town
-ST016,G.P. Hospital
-ST017,Lakshmipuram
-ST018,Tex Tool / Velan Theatre
-ST019,Ganapathy
-ST020,Surya Hospital
-ST021,C.M.S. School
-ST022,Athipalayam Junction
-ST023,Bharathi Nagar
-ST024,Ramakrishna Mill
-ST025,L.G.B. Nagar
-ST026,Sivanandha Mills
-ST027,Anandha Kumar Mills
-ST028,S.R.P. Mills
-ST029,Amman Kovil
-ST030,G.K.S. Nagar
-ST031,Kalapatti Pirivu
-ST032,Saravanampatti
-ST033,Viswasapuram
-ST034,Karattumedu
-ST035,P.P.G. IT
-ST036,S.N.S. College / Valiyampalayam Pirivu
-ST037,S.N.S. College
-ST038,Sri Village Nagar
-ST039,Kurumbapalayam
-ST040,Kodia Park
-ST041,Info Institute of Engineering
-ST042,Kovilpalayam
-ST043,S.S. Kulam
-ST044,V.J. Nagar
-ST045,Kottaipalayam
-ST046,C.S.I. Colony
-ST047,Agrahara Samakulam
-ST048,Thottipalayam
-ST049,Vellamadai
-ST050,Christ The King Church
-ST051,Town Hall
-ST052,Karumbukadai
-ST053,Athupalam
-ST054,Kurichi Pirivu
-ST055,Kurichi Pirivu Housing Unit
-ST056,Iyer Hospital
-ST057,Sundarapuram
-ST058,Gandhi Nagar
-ST059,L.I.C. Colony
-ST060,Sidco
-ST061,K.P.M. Matriculation School
-ST062,Rathinam College
-ST063,Eachanari
-ST064,Karpagam University
-ST065,Ganesh Nagar
-ST066,Malumichampatti Junction
-ST067,Malumichampatti
-ST068,Hindustan College
-ST069,Othakal Mandapam
-ST070,Karpagam Medical College & Hospital
-ST071,Premier Mills
-ST072,Polytechnic College
-ST073,Mailrapalayam
-ST074,Kinathukadavu Check Post
-ST075,Arulmigu Velayutha Swamy Temple
-ST076,Kinathukadavu
-ST077,Kuniyamuthur High School
-ST078,Kuniyamuthur
-ST079,Nehru College
-ST080,Edayarpalayam Pirivu
-ST081,Kuniyamuthur Police Station
-ST082,B.K. Pudur
-ST083,Kovaipudur Pirivu
-ST084,Milekal
-ST085,Madukkarai Police Station
-ST086,Madukkarai Union Office
-ST087,Marappalam
-ST088,Chettipalayam Pirivu
-ST089,Indian Bank
-ST090,Thirumalayampalayam Pirivu
-ST091,K.G. Chavadi
-ST092,Pichanur
-ST093,Vanthavalam
+stop_id,stop_name,latitude,longitude,corridor
+ST001,Gandhipuram Town Bus Stand,11.0168,76.9672,Sathy Road (NH 209)
+ST002,Ukkadam,10.9904,76.9608,Sathy Road (NH 209)
+ST003,Prakasam,10.9942,76.9615,Sathy Road (NH 209)
+ST004,Raja Street,10.9965,76.9625,Sathy Road (NH 209)
+ST005,Manikoondu / Town Hall,10.9982,76.9642,Sathy Road (NH 209)
+ST006,Five Corner,10.9968,76.9662,Sathy Road (NH 209)
+ST007,Railway Station,10.9978,76.9685,Sathy Road (NH 209)
+ST008,Collector Office,11.0015,76.9688,Sathy Road (NH 209)
+ST009,D.S.P. Office,11.0048,76.9698,Sathy Road (NH 209)
+ST010,Oriental Insurance,11.0078,76.9705,Sathy Road (NH 209)
+ST011,C.S.I. Immanuel Church,11.0098,76.9702,Sathy Road (NH 209)
+ST012,C.S.I. School,11.0118,76.969,Sathy Road (NH 209)
+ST013,V.O.C. Park,11.0138,76.9682,Sathy Road (NH 209)
+ST014,Park Gate,11.0152,76.9678,Sathy Road (NH 209)
+ST015,Gandhipuram Town,11.0168,76.9672,Sathy Road (NH 209)
+ST016,G.P. Hospital,11.021,76.9695,Sathy Road (NH 209)
+ST017,Lakshmipuram,11.025,76.9715,Sathy Road (NH 209)
+ST018,Tex Tool / Velan Theatre,11.029,76.9735,Sathy Road (NH 209)
+ST019,Ganapathy,11.033,76.9755,Sathy Road (NH 209)
+ST020,Surya Hospital,11.037,76.9775,Sathy Road (NH 209)
+ST021,C.M.S. School,11.041,76.9795,Sathy Road (NH 209)
+ST022,Athipalayam Junction,11.045,76.9815,Sathy Road (NH 209)
+ST023,Bharathi Nagar,11.049,76.9835,Sathy Road (NH 209)
+ST024,Ramakrishna Mill,11.053,76.9855,Sathy Road (NH 209)
+ST025,L.G.B. Nagar,11.057,76.9875,Sathy Road (NH 209)
+ST026,Sivanandha Mills,11.061,76.9895,Sathy Road (NH 209)
+ST027,Anandha Kumar Mills,11.065,76.9915,Sathy Road (NH 209)
+ST028,S.R.P. Mills,11.069,76.9935,Sathy Road (NH 209)
+ST029,Amman Kovil,11.073,76.9955,Sathy Road (NH 209)
+ST030,G.K.S. Nagar,11.077,76.9975,Sathy Road (NH 209)
+ST031,Kalapatti Pirivu,11.081,76.9995,Sathy Road (NH 209)
+ST032,Saravanampatti,11.085,77.0015,Sathy Road (NH 209)
+ST033,Viswasapuram,11.09,77.004,Sathy Road (NH 209)
+ST034,Karattumedu,11.095,77.0065,Sathy Road (NH 209)
+ST035,P.P.G. IT,11.1,77.009,Sathy Road (NH 209)
+ST036,S.N.S. College / Valiyampalayam Pirivu,11.105,77.0115,Sathy Road (NH 209)
+ST037,S.N.S. College,11.11,77.014,Sathy Road (NH 209)
+ST038,Sri Village Nagar,11.115,77.0165,Sathy Road (NH 209)
+ST039,Kurumbapalayam,11.1205,77.0195,Sathy Road (NH 209)
+ST040,Kodia Park,11.1275,77.023,Sathy Road (NH 209)
+ST041,Info Institute of Engineering,11.1345,77.0265,Sathy Road (NH 209)
+ST042,Kovilpalayam,11.1415,77.0305,Sathy Road (NH 209)
+ST043,S.S. Kulam,11.1465,77.0335,Sathy Road (NH 209)
+ST044,V.J. Nagar,11.1505,77.036,Sathy Road (NH 209)
+ST045,Kottaipalayam,11.1545,77.0385,Sathy Road (NH 209)
+ST046,C.S.I. Colony,11.1575,77.0405,Sathy Road (NH 209)
+ST047,Agrahara Samakulam,11.1605,77.0425,Sathy Road (NH 209)
+ST048,Thottipalayam,11.1635,77.0445,Sathy Road (NH 209)
+ST049,Vellamadai,11.1665,77.0465,Sathy Road (NH 209)
+ST050,Christ The King Church,10.9855,76.963,Sathy Road (NH 209)
+ST051,Town Hall,10.9982,76.9642,Pollachi Road (NH 83)
+ST052,Karumbukadai,10.979,76.9655,Pollachi Road (NH 83)
+ST053,Athupalam,10.974,76.967,Pollachi Road (NH 83)
+ST054,Kurichi Pirivu,10.968,76.969,Pollachi Road (NH 83)
+ST055,Kurichi Pirivu Housing Unit,10.963,76.9705,Pollachi Road (NH 83)
+ST056,Iyer Hospital,10.958,76.972,Pollachi Road (NH 83)
+ST057,Sundarapuram,10.952,76.9735,Pollachi Road (NH 83)
+ST058,Gandhi Nagar,10.947,76.9748,Pollachi Road (NH 83)
+ST059,L.I.C. Colony,10.942,76.976,Pollachi Road (NH 83)
+ST060,Sidco,10.937,76.9772,Pollachi Road (NH 83)
+ST061,K.P.M. Matriculation School,10.932,76.9785,Pollachi Road (NH 83)
+ST062,Rathinam College,10.927,76.98,Pollachi Road (NH 83)
+ST063,Eachanari,10.9215,76.982,Pollachi Road (NH 83)
+ST064,Karpagam University,10.916,76.984,Pollachi Road (NH 83)
+ST065,Ganesh Nagar,10.91,76.986,Pollachi Road (NH 83)
+ST066,Malumichampatti Junction,10.904,76.988,Pollachi Road (NH 83)
+ST067,Malumichampatti,10.898,76.99,Pollachi Road (NH 83)
+ST068,Hindustan College,10.892,76.992,Pollachi Road (NH 83)
+ST069,Othakal Mandapam,10.885,76.994,Pollachi Road (NH 83)
+ST070,Karpagam Medical College & Hospital,10.878,76.996,Pollachi Road (NH 83)
+ST071,Premier Mills,10.871,76.998,Pollachi Road (NH 83)
+ST072,Polytechnic College,10.864,77.0,Pollachi Road (NH 83)
+ST073,Mailrapalayam,10.857,77.002,Pollachi Road (NH 83)
+ST074,Kinathukadavu Check Post,10.85,77.004,Pollachi Road (NH 83)
+ST075,Arulmigu Velayutha Swamy Temple,10.843,77.006,Pollachi Road (NH 83)
+ST076,Kinathukadavu,10.835,77.008,Pollachi Road (NH 83)
+ST077,Kuniyamuthur High School,10.965,76.952,Palakkad Road (NH 544)
+ST078,Kuniyamuthur,10.96,76.949,Palakkad Road (NH 544)
+ST079,Nehru College,10.955,76.946,Palakkad Road (NH 544)
+ST080,Edayarpalayam Pirivu,10.95,76.943,Palakkad Road (NH 544)
+ST081,Kuniyamuthur Police Station,10.945,76.94,Palakkad Road (NH 544)
+ST082,B.K. Pudur,10.94,76.937,Palakkad Road (NH 544)
+ST083,Kovaipudur Pirivu,10.935,76.934,Palakkad Road (NH 544)
+ST084,Milekal,10.928,76.93,Palakkad Road (NH 544)
+ST085,Madukkarai Police Station,10.92,76.925,Palakkad Road (NH 544)
+ST086,Madukkarai Union Office,10.912,76.92,Palakkad Road (NH 544)
+ST087,Marappalam,10.904,76.915,Palakkad Road (NH 544)
+ST088,Chettipalayam Pirivu,10.896,76.91,Palakkad Road (NH 544)
+ST089,Indian Bank,10.888,76.905,Palakkad Road (NH 544)
+ST090,Thirumalayampalayam Pirivu,10.88,76.9,Palakkad Road (NH 544)
+ST091,K.G. Chavadi,10.87,76.892,Palakkad Road (NH 544)
+ST092,Pichanur,10.86,76.885,Palakkad Road (NH 544)
+ST093,Vanthavalam,10.85,76.878,Palakkad Road (NH 544)
