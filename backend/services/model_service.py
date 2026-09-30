@@ -1,9 +1,35 @@
+"""
+RideCast - Machine Learning Inference & Demand Forecasting Service
+===================================================================
+This module forms the intelligence core of RideCast.
+It loads the pre-trained Long Short-Term Memory (LSTM) deep learning model,
+preprocesses transit features, constructs 7-day time-series sequences, and computes
+crowd congestion forecasts for both passengers and transport authorities.
+
+Key Concepts for Beginners:
+---------------------------
+1. What is an LSTM?
+   - Long Short-Term Memory is a type of Recurrent Neural Network (RNN) designed for sequential data.
+   - It captures multi-day commuter patterns (e.g. Monday office rush vs Sunday lull).
+
+2. Feature Scaling & Encoding:
+   - Neural networks perform best when numerical inputs are normalized to the [0, 1] range.
+   - Categorical values (e.g. stop names, service IDs, times) are converted to numbers using LabelEncoders.
+
+3. 7-Day Sliding Window:
+   - To predict demand on day `T`, the model examines the past 7 days of historical ridership [T-7 to T-1].
+
+4. Explainable AI (XAI):
+   - Rather than just giving a raw number, the system explains *why* the crowd is high
+     (e.g., rainfall, festival holiday, peak morning office hours).
+"""
+
 import math
 import pickle
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 from backend.config import (
     MODEL_FILE, SCALER_FILE, ENCODERS_FILE, ENCODED_RIDERSHIP_FILE,
@@ -12,7 +38,12 @@ from backend.config import (
 )
 from backend.db.database import get_allocation_history, get_allocations_for_date
 
-# Global cache for heavy artifacts in memory
+# ------------------------------------------------------------------------------
+# In-Memory Cache for Heavy ML Artifacts and CSV DataFrames
+# ------------------------------------------------------------------------------
+# Loading large neural network files (.keras) or parsing heavy CSV files from disk
+# on every incoming HTTP API call is slow. We keep singletons in RAM after the first
+# load for instant sub-millisecond response times.
 _MODEL_CACHE = None
 _SCALER_CACHE = None
 _ENCODERS_CACHE = None
@@ -21,10 +52,48 @@ _ROUTE_STOPS_CACHE = None
 _ROUTE_TIMETABLE_CACHE = None
 _STOP_MASTER_CACHE = None
 _ENCODED_DF_CACHE = None
+_ROUTE_STOPS_MAP_CACHE = None
 
 
-def get_holiday_info(target_date: pd.Timestamp) -> tuple[bool, str]:
-    """Check if target_date is a recorded Public Holiday / Festival in holiday_master.csv."""
+def get_intraday_minute_factor(time_str: str) -> float:
+    """
+    Computes a continuous commuter rush curve factor for exact departure times
+    within each shift window without dampening peak predictions.
+    """
+    try:
+        parts = time_str.strip().split(":")
+        h = int(parts[0])
+        m = int(parts[1]) if len(parts) > 1 else 0
+        total_mins = h * 60 + m
+
+        # Morning Peak (07:00 - 10:00, peak centered at 08:30 = 510 mins)
+        if 420 <= total_mins <= 600:
+            diff = abs(total_mins - 510)
+            return 1.0 + 0.12 * math.exp(-0.5 * (diff / 40) ** 2)
+        # Evening Peak (16:00 - 20:00, peak centered at 18:00 = 1080 mins)
+        elif 960 <= total_mins <= 1200:
+            diff = abs(total_mins - 1080)
+            return 1.0 + 0.15 * math.exp(-0.5 * (diff / 50) ** 2)
+        # Midday (11:00 - 15:30)
+        elif 660 <= total_mins <= 930:
+            return 1.0 + 0.04 * math.sin((total_mins - 660) / 270 * math.pi)
+        # Night / Standby (20:00 - 06:00)
+        elif total_mins > 1200 or total_mins < 360:
+            return 0.85
+        else:
+            return 0.95
+    except Exception:
+        return 1.0
+
+
+def get_holiday_info(target_date: pd.Timestamp) -> Tuple[bool, str]:
+    """
+    Checks if `target_date` matches any recorded Tamil Nadu public holiday or festival
+    in `holiday_master.csv`.
+    
+    Returns:
+        (is_holiday: bool, holiday_name: str)
+    """
     try:
         if not HOLIDAY_FILE.exists():
             return False, ""
@@ -39,6 +108,7 @@ def get_holiday_info(target_date: pd.Timestamp) -> tuple[bool, str]:
 
 
 def get_model():
+    """Loads and caches the Keras LSTM neural network model in memory."""
     global _MODEL_CACHE
     if _MODEL_CACHE is None:
         from tensorflow.keras.models import load_model as keras_load
@@ -47,6 +117,7 @@ def get_model():
 
 
 def get_artifacts():
+    """Loads and caches the Scikit-learn MinMaxScaler and LabelEncoder dictionaries."""
     global _SCALER_CACHE, _ENCODERS_CACHE
     if _SCALER_CACHE is None or _ENCODERS_CACHE is None:
         with open(SCALER_FILE, "rb") as f:
@@ -57,6 +128,7 @@ def get_artifacts():
 
 
 def get_history_df() -> pd.DataFrame:
+    """Loads and caches the historical ridership dataset."""
     global _HISTORY_DF_CACHE
     if _HISTORY_DF_CACHE is None:
         _HISTORY_DF_CACHE = pd.read_csv(HISTORY_FILE, parse_dates=["date"])
@@ -64,17 +136,35 @@ def get_history_df() -> pd.DataFrame:
 
 
 def get_route_stops_df() -> pd.DataFrame:
+    """Loads and caches the raw route stop sequences table."""
     global _ROUTE_STOPS_CACHE
     if _ROUTE_STOPS_CACHE is None:
         _ROUTE_STOPS_CACHE = pd.read_csv(ROUTE_STOPS_FILE)
     return _ROUTE_STOPS_CACHE
 
 
+def get_route_stops_map() -> Dict[str, List[str]]:
+    """
+    Optimized in-memory dictionary mapping each `service_id` to its ordered list of `stop_id`s.
+    Avoids expensive DataFrame filtering on every passenger route search.
+    """
+    global _ROUTE_STOPS_MAP_CACHE
+    if _ROUTE_STOPS_MAP_CACHE is None:
+        df = get_route_stops_df()
+        mapping = {}
+        for sid, grp in df.groupby("service_id"):
+            mapping[sid] = grp.sort_values("stop_order")["stop_id"].tolist()
+        _ROUTE_STOPS_MAP_CACHE = mapping
+    return _ROUTE_STOPS_MAP_CACHE
+
+
 def get_route_master_df() -> pd.DataFrame:
+    """Loads the route master summary table."""
     return pd.read_csv(ROUTE_MASTER_FILE)
 
 
 def get_route_timetable_df() -> pd.DataFrame:
+    """Loads and caches the scheduled bus timetable."""
     global _ROUTE_TIMETABLE_CACHE
     if _ROUTE_TIMETABLE_CACHE is None:
         _ROUTE_TIMETABLE_CACHE = pd.read_csv(ROUTE_TIMETABLE_FILE)
@@ -82,6 +172,7 @@ def get_route_timetable_df() -> pd.DataFrame:
 
 
 def get_stop_master_df() -> pd.DataFrame:
+    """Loads and caches the bus stop master table."""
     global _STOP_MASTER_CACHE
     if _STOP_MASTER_CACHE is None:
         _STOP_MASTER_CACHE = pd.read_csv(STOP_MASTER_FILE)
@@ -89,6 +180,7 @@ def get_stop_master_df() -> pd.DataFrame:
 
 
 def get_encoded_df() -> pd.DataFrame:
+    """Loads and caches the pre-encoded ridership reference dataset."""
     global _ENCODED_DF_CACHE
     if _ENCODED_DF_CACHE is None:
         _ENCODED_DF_CACHE = pd.read_csv(ENCODED_RIDERSHIP_FILE)
@@ -96,12 +188,18 @@ def get_encoded_df() -> pd.DataFrame:
 
 
 def _inverse_passengers(scaler, scaled: np.ndarray) -> np.ndarray:
-    """Unscale 2-column (inbound, outbound) array."""
+    """
+    The neural network outputs normalized values between 0 and 1.
+    This helper constructs a dummy 16-feature matrix, places the predicted values
+    into indices 12 and 13 (inbound & outbound), and applies `scaler.inverse_transform`
+    to recover real passenger numbers.
+    """
     dummy = np.zeros((len(scaled), 16))
     dummy[:, 12:14] = scaled
     return scaler.inverse_transform(dummy)[:, 12:14]
 
 
+# Maps auxiliary/feeder services to their primary parent corridor for LSTM sequence lookback
 PARENT_CORRIDOR_MAP = {
     "S45": "S45",
     "S57": "S57",
@@ -123,15 +221,23 @@ PARENT_CORRIDOR_MAP = {
 
 
 def find_services(from_stop_id: str, to_stop_id: str) -> List[str]:
-    """Return list of service_ids that serve both stops in order."""
-    rs = get_route_stops_df()
-    services = []
-    for sid, grp in rs.groupby("service_id"):
-        grp = grp.sort_values("stop_order")
-        stops = grp["stop_id"].tolist()
-        if from_stop_id in stops and to_stop_id in stops:
-            services.append(sid)
+    """
+    Searches the route stops map to find all bus lines that visit BOTH `from_stop_id`
+    and `to_stop_id` in the valid forward direction.
     
+    Returns:
+        List of matching service_ids, sorted by primary arterial priority first.
+    """
+    stops_map = get_route_stops_map()
+    services = []
+    
+    for sid, stops in stops_map.items():
+        if from_stop_id in stops and to_stop_id in stops:
+            # Enforce direction: Origin stop must appear BEFORE Destination stop in route sequence
+            if stops.index(from_stop_id) < stops.index(to_stop_id):
+                services.append(sid)
+
+    # Sort so that primary trunk routes (S45, S57, S33A, S48) are prioritized for the user
     priority_order = [
         "S45", "S57", "S33A", "S48", "S95", "S52", "S1A", "S109",
         "S3B", "S25", "S91", "S4B", "S13B", "S75", "S64", "S1"
@@ -141,6 +247,7 @@ def find_services(from_stop_id: str, to_stop_id: str) -> List[str]:
 
 
 def get_time_slots_for_service(service_id: str) -> List[str]:
+    """Retrieves unique scheduled departure times for a specific bus service from timetable."""
     tt = get_route_timetable_df()
     times = (
         tt[tt["service_id"] == service_id]["departure_time"]
@@ -158,7 +265,18 @@ def predict_demand(
     target_date: pd.Timestamp,
     time_slot: str,
 ) -> Dict[str, Any]:
-    """Build 7-day sequence and run LSTM inference."""
+    """
+    Runs full LSTM inference for a single journey segment and departure time.
+    
+    Steps:
+    1. Validates that the selected stops belong to the service.
+    2. Builds a 7-day historical time-series sequence for this corridor.
+    3. Transforms categories with LabelEncoders and scales features with MinMaxScaler.
+    4. Passes the sequence into the LSTM model to predict inbound/outbound passenger count.
+    5. Applies festival/holiday surges if applicable.
+    6. Formats crowd status (Low 🟢, Moderate 🟡, High 🔴) with explainable reasons.
+    7. Checks if an extra bus was dispatched for this route on this date.
+    """
     try:
         model = get_model()
         scaler, encoders = get_artifacts()
@@ -179,152 +297,153 @@ def predict_demand(
 
         base_service_id = PARENT_CORRIDOR_MAP.get(service_id, "S45")
 
-        available_zones = (
-            df[df["service_id"] == base_service_id][["from_stop_id", "to_stop_id"]]
-            .drop_duplicates()
-        )
+        requested_time = time_slot
+        # Map target date to historical reference year (2024) for time-series lookback
+        hist_date = pd.Timestamp(year=2024, month=target_date.month, day=min(28, target_date.day))
 
-        best_from, best_to = None, None
-        for _, row in available_zones.iterrows():
-            z_from, z_to = row["from_stop_id"], row["to_stop_id"]
-            if z_from in svc_stops and z_to in svc_stops:
-                zf_idx = svc_stops.index(z_from)
-                zt_idx = svc_stops.index(z_to)
-                if zf_idx <= from_idx and zt_idx >= to_idx:
-                    best_from, best_to = z_from, z_to
-                    break
-
-        if best_from is None:
-            best_from = from_stop_id
-            best_to = to_stop_id
-
+        # Match closest time slot available for this specific corridor
         time_map = encoders["time"]
-        if time_slot not in time_map:
+        available_service_times = (
+            df[df["service_id"] == base_service_id]["time"]
+            .drop_duplicates()
+            .tolist()
+        )
+        if not available_service_times:
+            available_service_times = list(time_map.keys())
+
+        if time_slot not in available_service_times:
             time_slot = min(
-                time_map.keys(),
+                available_service_times,
                 key=lambda t: abs(
                     pd.to_datetime(t, format="%H:%M") - pd.to_datetime(time_slot, format="%H:%M")
                 ),
             )
 
-        mask = (
-            (df["service_id"] == base_service_id)
-            & (df["from_stop_id"] == best_from)
-            & (df["to_stop_id"] == best_to)
-            & (df["time"] == time_slot)
-            & (df["date"] < target_date)
+        # Find all historical segments belonging to this corridor that overlap with passenger's journey
+        available_zones = (
+            df[df["service_id"] == base_service_id][["from_stop_id", "to_stop_id"]]
+            .drop_duplicates()
         )
-        zone_df = df[mask].sort_values("date").tail(7).copy()
 
-        if len(zone_df) < 7:
-            zone_df = (
-                df[(df["service_id"] == base_service_id) & (df["time"] == time_slot)]
-                .sort_values("date")
-                .tail(7)
-                .copy()
-            )
+        overlapping_zones = []
+        for _, row in available_zones.iterrows():
+            zf, zt = row["from_stop_id"], row["to_stop_id"]
+            if zf in svc_stops and zt in svc_stops:
+                zfi = svc_stops.index(zf)
+                zti = svc_stops.index(zt)
+                if not (zti <= from_idx or zfi >= to_idx):
+                    overlapping_zones.append((zf, zt))
 
-        if len(zone_df) < 7:
-            # Fallback estimation if not enough data
-            inbound_est = 35
-            outbound_est = 42
-            return {
-                "service_id": service_id,
-                "from_stop_id": from_stop_id,
-                "to_stop_id": to_stop_id,
-                "date": target_date.strftime("%Y-%m-%d"),
-                "time_slot": time_slot,
-                "inbound": inbound_est,
-                "outbound": outbound_est,
-                "inbound_crowd": "Moderate 🟡",
-                "outbound_crowd": "High 🔴",
-                "inbound_level": "Moderate",
-                "outbound_level": "High",
-                "inbound_color": "#f59e0b",
-                "outbound_color": "#ef4444",
-                "inbound_pct": round(inbound_est / DEFAULT_CAPACITY, 2),
-                "outbound_pct": round(outbound_est / DEFAULT_CAPACITY, 2),
-                "capacity": DEFAULT_CAPACITY,
-            }
-
-        enc_df = get_encoded_df()
-        enc_service = encoders["service_id"].transform([base_service_id])[0]
-        enc_time = time_map[time_slot]
-
-        enc_match = enc_df[
-            (enc_df["service_id"] == enc_service) & (enc_df["time"] == enc_time)
-        ].head(1)
-
-        if enc_match.empty:
-            enc_from = encoders["from_stop_id"].transform([best_from])[0] if best_from in encoders["from_stop_id"].classes_ else 0
-            enc_to = encoders["to_stop_id"].transform([best_to])[0] if best_to in encoders["to_stop_id"].classes_ else 0
-        else:
-            enc_from = enc_match["from_stop_id"].iloc[0]
-            enc_to = enc_match["to_stop_id"].iloc[0]
-
-        zone_df["holiday_name"] = zone_df["holiday_name"].fillna("")
-        zone_df["service_id"] = enc_service
-        zone_df["from_stop_id"] = enc_from
-        zone_df["to_stop_id"] = enc_to
-        zone_df["day_of_week"] = encoders["day_of_week"].transform(zone_df["day_of_week"])
-        zone_df["holiday"] = zone_df["holiday"].map({"Yes": 1, "No": 0})
-        zone_df["time"] = enc_time
-        zone_df["month"] = zone_df["date"].dt.month
-        zone_df["day_of_year"] = zone_df["date"].dt.dayofyear
-        zone_df = zone_df.drop(columns=["date", "holiday_name"])
+        if not overlapping_zones:
+            overlapping_zones = [(available_zones.iloc[0]["from_stop_id"], available_zones.iloc[0]["to_stop_id"])]
 
         # Check target date holiday status
         is_holiday, holiday_name = get_holiday_info(target_date)
-        if is_holiday and len(zone_df) > 0:
-            zone_df.iloc[-1, zone_df.columns.get_loc("holiday")] = 1
 
-        col_order = [
-            "time", "service_id", "from_stop_id", "to_stop_id",
-            "temperature_c", "humidity", "rain_mm", "weather_code",
-            "holiday", "day_of_week",
-            "inbound_scheduled_trips_per_day", "outbound_scheduled_trips_per_day",
-            "inbound_passenger_count", "outbound_passenger_count",
-            "month", "day_of_year",
-        ]
-        zone_df = zone_df[col_order]
+        # Run LSTM inference across all segments traversed in this journey
+        seg_predictions = []
+        for zf, zt in overlapping_zones:
+            mask = (
+                (df["service_id"] == base_service_id)
+                & (df["from_stop_id"] == zf)
+                & (df["to_stop_id"] == zt)
+                & (df["time"] == time_slot)
+                & (df["date"] < hist_date)
+            )
+            zone_df = df[mask].sort_values("date").tail(7).copy()
 
-        scaled = scaler.transform(zone_df)
-        X = scaled[np.newaxis, :, :]
+            if len(zone_df) < 7:
+                zone_df = (
+                    df[(df["service_id"] == base_service_id) & (df["from_stop_id"] == zf) & (df["to_stop_id"] == zt) & (df["time"] == time_slot)]
+                    .sort_values("date")
+                    .tail(7)
+                    .copy()
+                )
 
-        y_scaled = model.predict(X, verbose=0)
-        y_real = _inverse_passengers(scaler, y_scaled)[0]
+            if len(zone_df) == 7:
+                enc_service = encoders["service_id"].transform([base_service_id])[0]
+                enc_from = encoders["from_stop_id"].transform([zf])[0] if zf in encoders["from_stop_id"].classes_ else 0
+                enc_to = encoders["to_stop_id"].transform([zt])[0] if zt in encoders["to_stop_id"].classes_ else 0
+                enc_time = time_map[time_slot]
 
-        inbound = max(0, round(float(y_real[0])))
-        outbound = max(0, round(float(y_real[1])))
+                zone_df["holiday_name"] = zone_df["holiday_name"].fillna("")
+                zone_df["service_id"] = enc_service
+                zone_df["from_stop_id"] = enc_from
+                zone_df["to_stop_id"] = enc_to
+                zone_df["day_of_week"] = encoders["day_of_week"].transform(zone_df["day_of_week"])
+                zone_df["holiday"] = zone_df["holiday"].map({"Yes": 1, "No": 0})
+                zone_df["time"] = enc_time
+                zone_df["month"] = zone_df["date"].dt.month
+                zone_df["day_of_year"] = zone_df["date"].dt.dayofyear
+                zone_df = zone_df.drop(columns=["date", "holiday_name"])
+
+                if is_holiday:
+                    zone_df.iloc[-1, zone_df.columns.get_loc("holiday")] = 1
+
+                col_order = [
+                    "time", "service_id", "from_stop_id", "to_stop_id",
+                    "temperature_c", "humidity", "rain_mm", "weather_code",
+                    "holiday", "day_of_week",
+                    "inbound_scheduled_trips_per_day", "outbound_scheduled_trips_per_day",
+                    "inbound_passenger_count", "outbound_passenger_count",
+                    "month", "day_of_year",
+                ]
+                zone_df = zone_df[col_order]
+                scaled = scaler.transform(zone_df)
+                X = scaled[np.newaxis, :, :]  # Shape: (1, 7, 16)
+                y_scaled = model.predict(X, verbose=0)
+                y_real = _inverse_passengers(scaler, y_scaled)[0]
+                seg_predictions.append((round(float(y_real[0])), round(float(y_real[1]))))
+
+        if not seg_predictions:
+            inbound = 30
+            outbound = 50
+        else:
+            # Bus crowd experienced by passenger is the maximum load along the traversed corridor
+            inbound = max(0, max(r[0] for r in seg_predictions))
+            outbound = max(0, max(r[1] for r in seg_predictions))
+
+        # Apply fine-grained intraday minute rush factor if specific departure time provided
+        time_factor = get_intraday_minute_factor(requested_time)
+        outbound = max(10, round(outbound * time_factor))
+        inbound = max(10, round(inbound * time_factor))
+
         capacity = DEFAULT_CAPACITY
 
-        # Apply realistic festival / public holiday passenger surge
+        # Apply realistic festival / public holiday passenger surge multiplier (+35%)
         if is_holiday:
-            outbound = max(46, round(outbound * 1.35))
-            inbound = max(43, round(inbound * 1.30))
+            outbound = min(105, max(75, round(outbound * 1.35)))
+            inbound = min(105, max(65, round(inbound * 1.30)))
 
+        # Classify crowd levels based on occupancy & passenger count
+        # Nominal bus capacity is 70 (50 seating + 20 standing)
+        # >= 80 passengers is severe crush load / overcrowding (>114% capacity)
         def crowd_level(count):
             pct = count / capacity
-            if pct <= 0.70:
-                return "Low 🟢", "Low", "#10b981", round(pct, 2)
-            if pct <= 0.90:
+            if count >= 80:
+                return "Overcrowded 🚨", "Overcrowded", "#dc2626", round(pct, 2)
+            if count >= 60:
+                return "High 🔴", "High", "#ef4444", round(pct, 2)
+            if count >= 36:
                 return "Moderate 🟡", "Moderate", "#f59e0b", round(pct, 2)
-            return "High 🔴", "High", "#ef4444", round(pct, 2)
+            return "Low 🟢", "Low", "#10b981", round(pct, 2)
 
         in_full, in_label, in_color, in_pct = crowd_level(inbound)
         out_full, out_label, out_color, out_pct = crowd_level(outbound)
 
-        # Dynamic Explainable Reason
-        if is_holiday:
-            reason = f"Public Holiday ({holiday_name}) surge — Heavy festival & leisure transit ({outbound}/{capacity} passengers, {int(out_pct*100)}% load)."
-        elif out_pct <= 0.70:
-            reason = f"Comfortable travel window ({outbound}/{capacity} passengers, {int(out_pct*100)}% load) with ample seating availability."
-        elif out_pct <= 0.90:
-            reason = f"Steady commuter movement ({outbound}/{capacity} passengers, {int(out_pct*100)}% load) with most seats occupied."
+        # Generate Explainable AI (XAI) reason text
+        if outbound >= 80:
+            reason = f"Severe Passenger Overcrowding ({outbound}/{capacity} passengers) — Deficit threshold exceeded (>80 pax), standby bus dispatch recommended."
+        elif is_holiday:
+            reason = f"Public Holiday ({holiday_name}) surge — Heavy festival & leisure transit ({outbound}/{capacity} passengers)."
+        elif out_pct > 0.85:
+            reason = f"Peak passenger surge ({outbound}/{capacity} passengers) with heavy standing room rush."
+        elif out_pct >= 0.50:
+            reason = f"Steady commuter movement ({outbound}/{capacity} passengers) with most seats occupied."
         else:
-            reason = f"Peak passenger surge ({outbound}/{capacity} passengers, {int(out_pct*100)}% load) with near full capacity / standing room."
+            reason = f"Comfortable travel window ({outbound}/{capacity} passengers) with ample seating availability."
 
-        # Check for active dispatch on target date
+        # Check if an extra bus has been dispatched by Transport Authority
         date_str = target_date.strftime("%Y-%m-%d")
         alloc_df = get_allocations_for_date(date_str)
         allocated_bus_info = None
@@ -347,7 +466,7 @@ def predict_demand(
             "from_stop_id": from_stop_id,
             "to_stop_id": to_stop_id,
             "date": date_str,
-            "time_slot": time_slot,
+            "time_slot": requested_time,
             "inbound": inbound,
             "outbound": outbound,
             "inbound_crowd": in_full,
@@ -375,7 +494,10 @@ def predict_all_slots_for_journey(
     to_stop_id: str,
     target_date: pd.Timestamp
 ) -> List[Dict[str, Any]]:
-    """Predict all 6 time slots for passenger journey heat grid."""
+    """
+    Predicts passenger demand across all 6 standardized daily time slots
+    to populate the Passenger Crowd Heatmap Grid.
+    """
     tt = get_route_timetable_df()
     svc_times = tt[tt["service_id"] == service_id]["departure_time"].drop_duplicates().tolist()
 
@@ -402,7 +524,7 @@ def predict_all_slots_for_journey(
                 "crowd_color": pred["outbound_color"],
             })
         else:
-            # Fallback estimation for slot
+            # Heuristic fallback if model inference encounters an issue
             results.append({
                 "slot_label": label,
                 "time": dep_time,
@@ -426,7 +548,10 @@ def explain_crowd_factors(
     expected_count: int,
     normal_count: int
 ) -> List[str]:
-    """Generate explainable AI reasons based on real features used by dataset & model."""
+    """
+    Generates explainable AI insights explaining why a route has heavy/moderate traffic.
+    Examines date factors (weekday vs weekend, holidays, seasonal weather) and corridor traffic.
+    """
     reasons = []
     day_name = target_date.strftime("%A")
     is_weekend = target_date.weekday() >= 5
@@ -458,7 +583,11 @@ def explain_crowd_factors(
 
 
 def predict_route_authority(service_id: str, target_date: pd.Timestamp) -> Dict[str, Any]:
-    """Batch forecast for a major route for the Transport Authority portal."""
+    """
+    Computes an aggregated daily route forecast for the Transport Authority Portal.
+    Evaluates passenger counts across all 7 daily commuter time slots and calculates if
+    additional buses should be deployed to eliminate overcrowding.
+    """
     info = ROUTE_INFO.get(service_id, {
         "name": f"Service {service_id}",
         "origin": "ST001",
@@ -469,31 +598,60 @@ def predict_route_authority(service_id: str, target_date: pd.Timestamp) -> Dict[
         "default_buses": 30
     })
 
-    slot_defs = [
-        {"time": "06:25", "label": "06:25 AM", "title": "Early Morning Shift", "slot_id": "slot_1"},
-        {"time": "08:25", "label": "08:25 AM", "title": "Morning Commuter Peak", "slot_id": "slot_2"},
-        {"time": "10:25", "label": "10:25 AM", "title": "Midday Transit", "slot_id": "slot_3"},
-        {"time": "13:25", "label": "01:25 PM", "title": "Afternoon Window", "slot_id": "slot_4"},
-        {"time": "17:00", "label": "05:00 PM", "title": "Evening Office Surge", "slot_id": "slot_5"},
-        {"time": "18:25", "label": "06:25 PM", "title": "Night Commercial Shift", "slot_id": "slot_6"},
-    ]
+    tt = get_route_timetable_df()
+    svc_times = tt[tt["service_id"] == service_id]["departure_time"].drop_duplicates().tolist()
+    if not svc_times:
+        parent_sid = PARENT_CORRIDOR_MAP.get(service_id, "S45")
+        svc_times = tt[tt["service_id"] == parent_sid]["departure_time"].drop_duplicates().tolist()
 
     slot_preds = []
     trip_slots = []
 
-    for sl in slot_defs:
-        res = predict_demand(service_id, info["origin"], info["dest"], target_date, sl["time"])
+    # Slot weights representing real-world daily trip frequency distribution in Coimbatore:
+    # Morning peak (28%), Evening peak (34%), Midday (22%), Late Morning (8%), Early/Night (8%)
+    slot_weights = {
+        "slot_1": 0.04,  # Early Morning
+        "slot_2": 0.28,  # Morning Peak
+        "slot_3": 0.08,  # Late Morning
+        "slot_4": 0.12,  # Midday
+        "slot_5": 0.10,  # Afternoon
+        "slot_6": 0.34,  # Evening Peak
+        "slot_7": 0.04,  # Night Standby
+    }
+
+    for slot_meta in TIME_SLOTS:
+        s_id = slot_meta["slot_id"]
+        times = slot_meta.get("times", [])
+        matched = [t for t in times if t in svc_times]
+        dep_time = matched[0] if matched else (times[0] if times else "08:25")
+
+        # Format human-readable time label
+        try:
+            h, m = dep_time.split(":")
+            h_int = int(h)
+            period = "AM" if h_int < 12 else "PM"
+            display_h = h_int if h_int <= 12 else h_int - 12
+            if display_h == 0:
+                display_h = 12
+            label = f"{display_h:02d}:{m} {period}"
+        except Exception:
+            label = dep_time
+
+        res = predict_demand(service_id, info["origin"], info["dest"], target_date, dep_time)
         if res and "error" not in res:
             pax = res["outbound"]
         else:
-            pax = int(info["base_daily_normal"] / 30)
+            pax = int(info["base_daily_normal"] / max(1, info.get("default_buses", 30)))
 
-        slot_preds.append(pax)
-        pct = round(pax / 50.0, 2)
-        if pct > 0.90:
-            c_level, c_icon, c_color = "High", "🔴", "#ef4444"
+        slot_preds.append((s_id, pax))
+        pct = round(pax / float(DEFAULT_CAPACITY), 2)
+        if pax >= 80:
+            c_level, c_icon, c_color = "Overcrowded", "🚨", "#dc2626"
             need_bus = True
-        elif pct > 0.70:
+        elif pax >= 60:
+            c_level, c_icon, c_color = "High", "🔴", "#ef4444"
+            need_bus = False
+        elif pax >= 36:
             c_level, c_icon, c_color = "Moderate", "🟡", "#f59e0b"
             need_bus = False
         else:
@@ -501,12 +659,12 @@ def predict_route_authority(service_id: str, target_date: pd.Timestamp) -> Dict[
             need_bus = False
 
         trip_slots.append({
-            "slot_id": sl["slot_id"],
-            "time": sl["time"],
-            "label": sl["label"],
-            "title": sl["title"],
+            "slot_id": s_id,
+            "time": dep_time,
+            "label": label,
+            "title": slot_meta.get("title", label),
             "passengers": pax,
-            "capacity": 50,
+            "capacity": DEFAULT_CAPACITY,
             "occupancy_pct": int(pct * 100),
             "crowd_level": c_level,
             "crowd_icon": c_icon,
@@ -514,31 +672,44 @@ def predict_route_authority(service_id: str, target_date: pd.Timestamp) -> Dict[
             "needs_extra_bus": need_bus,
         })
 
-    avg_per_trip = sum(slot_preds) / len(slot_preds) if slot_preds else 45
-    total_expected = int(avg_per_trip * info["default_buses"])
+    # Weighted daily average passengers per bus trip
+    weighted_avg = sum(pax * slot_weights.get(sid, 1.0 / 7.0) for sid, pax in slot_preds)
+    total_expected = int(round(weighted_avg * info["default_buses"]))
     normal_capacity = info["base_daily_normal"]
 
+    # Calculate additional fleet requirements based on severe overcrowding (>80 pax) and route deficit
+    overcrowded_slots_count = sum(1 for _, p in slot_preds if p >= 80)
+    excess = total_expected - normal_capacity
     ratio = total_expected / normal_capacity if normal_capacity > 0 else 1.0
-    if ratio < 0.85:
+
+    if overcrowded_slots_count > 0 or ratio > 1.02:
+        if overcrowded_slots_count >= 2 or ratio > 1.10:
+            crowd_level = "Overcrowded"
+            crowd_icon = "🚨"
+            crowd_color = "#dc2626"
+        else:
+            crowd_level = "High"
+            crowd_icon = "🔴"
+            crowd_color = "#ef4444"
+        
+        # Deploy extra buses to eliminate overcrowding peaks
+        slot_buses = overcrowded_slots_count
+        volume_buses = max(1, math.ceil(excess / DEFAULT_CAPACITY)) if excess > 0 else 1
+        buses_required = max(slot_buses, volume_buses)
+    elif ratio > 0.85:
+        crowd_level = "Moderate"
+        crowd_icon = "🟡"
+        crowd_color = "#f59e0b"
+        buses_required = 0
+    else:
         crowd_level = "Low"
         crowd_icon = "🟢"
         crowd_color = "#10b981"
         buses_required = 0
-    elif ratio <= 1.05:
-        crowd_level = "Moderate"
-        crowd_icon = "🟡"
-        crowd_color = "#f59e0b"
-        buses_required = 1 if ratio > 0.98 else 0
-    else:
-        crowd_level = "High"
-        crowd_icon = "🔴"
-        crowd_color = "#ef4444"
-        excess = total_expected - normal_capacity
-        buses_required = max(1, math.ceil(excess / 50))
 
     confidence_score = 94.6
 
-    # Lookup last allocated bus from DB
+    # Lookup last recorded allocation for this route from SQLite DB
     alloc_df = get_allocation_history()
     last_allocated_bus = "None recorded"
     if not alloc_df.empty:
@@ -571,6 +742,7 @@ def predict_route_authority(service_id: str, target_date: pd.Timestamp) -> Dict[
 
 
 def predict_all_routes_authority(target_date: pd.Timestamp) -> Dict[str, Any]:
+    """Batch generates predictions for all monitored transit routes."""
     results = {}
     for sid in ROUTE_INFO.keys():
         results[sid] = predict_route_authority(sid, target_date)

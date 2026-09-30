@@ -1,5 +1,20 @@
 "use client";
 
+/**
+ * RideCast - Commuter Feedback Widget Component
+ * ==============================================
+ * A prompt allowing passengers to vote whether the AI crowd forecast
+ * was helpful for planning their transit.
+ * 
+ * Key Concepts for Beginners:
+ * ---------------------------
+ * 1. Asynchronous API Calls:
+ *    - Calls `api.submitFeedback({ useful: true/false, ... })` which posts data to `/api/feedback`.
+ * 
+ * 2. Optimistic UI Updates:
+ *    - Updates `submitted` state to display a friendly green confirmation message upon receipt.
+ */
+
 import React, { useState } from "react";
 import { ThumbsUp, ThumbsDown, Check, MessageSquare } from "lucide-react";
 import { api } from "@/lib/api";
@@ -29,7 +44,7 @@ export default function FeedbackWidget({
       });
       setSubmitted(true);
     } catch (e) {
-      console.error(e);
+      console.error("Feedback submission error:", e);
     } finally {
       setLoading(false);
     }

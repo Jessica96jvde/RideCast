@@ -1,3 +1,14 @@
+"""
+RideCast - Commuter Feedback REST Router
+========================================
+Collects accuracy votes and helpfulness feedback from passengers to evaluate
+model performance in real-world transit conditions.
+
+Endpoints:
+- POST /api/feedback -> Submits passenger feedback (useful: yes/no, stops, time slot).
+- GET  /api/feedback -> Lists all stored feedback entries.
+"""
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
@@ -8,6 +19,7 @@ router = APIRouter(prefix="/api/feedback", tags=["feedback"])
 
 
 class FeedbackRequest(BaseModel):
+    """Payload sent by the passenger feedback rating widget."""
     useful: bool
     from_stop: Optional[str] = ""
     to_stop: Optional[str] = ""
@@ -16,6 +28,7 @@ class FeedbackRequest(BaseModel):
 
 @router.post("")
 def submit_feedback(req: FeedbackRequest):
+    """Saves passenger feedback to SQLite database."""
     save_feedback(
         useful=req.useful,
         from_stop=req.from_stop or "",
@@ -30,4 +43,5 @@ def submit_feedback(req: FeedbackRequest):
 
 @router.get("")
 def list_feedback():
+    """Retrieves all feedback entries for system auditing."""
     return get_all_feedback()

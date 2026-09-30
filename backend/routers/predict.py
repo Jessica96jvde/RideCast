@@ -1,3 +1,14 @@
+"""
+RideCast - Passenger Crowd Prediction REST Router
+=================================================
+Provides API endpoints for computing machine learning ridership predictions
+for commuter trips and journey segments.
+
+Endpoints:
+- POST /api/predict/demand    -> Predicts crowd density for a specific stop-to-stop trip & time slot.
+- POST /api/predict/all-slots -> Predicts crowd density across all 6 time slots for the daily heatmap.
+"""
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import pandas as pd
@@ -11,6 +22,7 @@ router = APIRouter(prefix="/api/predict", tags=["predict"])
 
 
 class PredictRequest(BaseModel):
+    """Request payload for a single commuter trip prediction."""
     from_stop_id: str
     to_stop_id: str
     date: str
@@ -19,6 +31,7 @@ class PredictRequest(BaseModel):
 
 
 class BatchSlotsRequest(BaseModel):
+    """Request payload for multi-slot journey heatmap prediction."""
     from_stop_id: str
     to_stop_id: str
     date: str
@@ -27,6 +40,10 @@ class BatchSlotsRequest(BaseModel):
 
 @router.post("/demand")
 def predict_single_demand(req: PredictRequest):
+    """
+    Computes passenger crowd forecast for a specific journey segment and time slot.
+    If `service_id` is omitted, automatically finds the best direct bus service connecting the stops.
+    """
     service_id = req.service_id
     if not service_id:
         services = find_services(req.from_stop_id, req.to_stop_id)
@@ -49,12 +66,17 @@ def predict_single_demand(req: PredictRequest):
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
 
+    # Attach list of all available alternative direct services for passenger choice
     result["available_services"] = find_services(req.from_stop_id, req.to_stop_id)
     return result
 
 
 @router.post("/all-slots")
 def predict_all_slots(req: BatchSlotsRequest):
+    """
+    Predicts demand across all 6 standardized daily time slots for a journey.
+    Used by the frontend to render the visual 6-column Crowd Heatmap Grid.
+    """
     services = find_services(req.from_stop_id, req.to_stop_id)
     if not services:
         raise HTTPException(

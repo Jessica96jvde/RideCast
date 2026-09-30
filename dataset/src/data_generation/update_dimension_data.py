@@ -1,15 +1,23 @@
+"""
+RideCast - Transit Network Dimension Data Generator & Enricher
+==============================================================
+Calculates GPS distances, travel times, and GTFS shape points for stops,
+segments, and routes across the Coimbatore transit network.
+"""
+
 import math
 import sys
 import pandas as pd
 from pathlib import Path
 
-PROJECT_ROOT = Path("d:/RideCast")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 DATA_DIR = PROJECT_ROOT / "dataset" / "data"
 
-from utils.map_utils import STOP_COORDS
+from backend.config import STOP_COORDS
+
 
 def haversine_distance(coord1, coord2):
     """Calculate distance in km between two GPS coordinates using Haversine formula."""
@@ -26,6 +34,7 @@ def haversine_distance(coord1, coord2):
     
     # Apply 1.18x urban road winding factor to approximate road street distance
     return round(R * c * 1.18, 3)
+
 
 def generate_dimensions():
     print("--- 1. Updating stop_master.csv with Coordinates & Corridor Dimensions ---")
@@ -112,7 +121,6 @@ def generate_dimensions():
     rm_df["total_stops"] = rm_df["service_id"].map(lambda s: route_stats.get(s, (15.0, 45, 20))[2])
     rm_df.to_csv(DATA_DIR / "route_master.csv", index=False)
     print(f"Updated {len(rm_df)} routes in route_master.csv")
-    print(rm_df)
 
     print("\n--- 5. Generating Standard GTFS-Compliant route_shapes.csv ---")
     shapes_rows = []
@@ -136,6 +144,7 @@ def generate_dimensions():
     print(f"Generated route_shapes.csv with {len(shapes_df)} high-precision GPS waypoints!")
 
     print("\nALL TRANSIT DIMENSION DATA SUCCESSFULLY SAVED AND VALIDATED!")
+
 
 if __name__ == "__main__":
     generate_dimensions()

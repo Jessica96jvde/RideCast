@@ -1,5 +1,24 @@
 "use client";
 
+/**
+ * RideCast - Leaflet Network Overview Map Component
+ * ==================================================
+ * Renders an interactive transit network map for the Transport Authority Portal:
+ * - Plots all active transit corridors with distinctive color codes.
+ * - Highlights high-congestion routes in real-time.
+ * - Draws dashed trajectory lines showing emergency fleet dispatches from nearest bus depots.
+ * - Displays prominent depot station labels across Coimbatore.
+ * 
+ * Key Concepts for Beginners:
+ * ---------------------------
+ * 1. Multi-Route Layering:
+ *    - Iterates over all active transit corridors and adds polyline layers.
+ * 
+ * 2. Visual Dispatch Lines:
+ *    - When `buses_required > 0`, renders a glowing dashed line (`dashArray: "6, 8"`)
+ *      connecting the nearest depot directly to the congested route terminus.
+ */
+
 import React, { useEffect, useRef } from "react";
 import type { Map as LeafletMap } from "leaflet";
 import { AuthorityRouteForecast } from "@/lib/types";
@@ -19,10 +38,16 @@ interface LeafletNetworkMapProps {
     }
   >;
   routeStartCoords: Record<string, [number, number, string]>;
+  height?: string;
+  className?: string;
 }
 
+// In-memory cache for road geometries
 const roadCache = new Map<string, [number, number][]>();
 
+/**
+ * Fetches turn-by-turn road curves from OSRM to render smooth asphalt polylines.
+ */
 async function fetchRoadRoute(coords: [number, number][]): Promise<[number, number][]> {
   if (coords.length < 2) return coords;
   const cacheKey = coords.map((c) => `${c[0].toFixed(4)},${c[1].toFixed(4)}`).join(";");
@@ -68,6 +93,8 @@ export default function LeafletNetworkMap({
   stopNames,
   routeGeometry,
   routeStartCoords,
+  height,
+  className,
 }: LeafletNetworkMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
@@ -77,9 +104,11 @@ export default function LeafletNetworkMap({
 
     let isMounted = true;
 
+    // Dynamically import Leaflet on client side
     import("leaflet").then(async (L) => {
       if (!isMounted || !mapContainerRef.current) return;
 
+      // Clean up previous map if re-rendering
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -93,6 +122,7 @@ export default function LeafletNetworkMap({
 
       mapInstanceRef.current = map;
 
+      // Base OpenStreetMap tile layer
       L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
@@ -108,6 +138,7 @@ export default function LeafletNetworkMap({
           ? Object.keys(routeGeometry)
           : [selectedService];
 
+      // Plot all relevant transit routes
       for (const sid of serviceIds) {
         const geom = routeGeometry[sid];
         if (!geom || !geom.coordinates || geom.coordinates.length < 2) continue;
@@ -152,15 +183,17 @@ export default function LeafletNetworkMap({
           </div>
         `);
 
-        // If extra bus is required or allocated: Draw a prominent Dispatch Trajectory Line from nearest depot
+        // If extra bus is required: Draw a prominent Dispatch Trajectory Line from nearest depot
         if (forecast && (forecast.buses_required > 0 || forecast.crowd_level === "High")) {
           const originCoord = roadPoints[0];
           const nearestDepotCoord: [number, number] =
-            sid === "S45" || sid === "S52"
+            sid === "S45" || sid === "S52" || sid === "S57"
               ? [10.9904, 76.9608] // Ukkadam Depot
-              : sid === "S33A" || sid === "S95"
-              ? [10.9760, 76.9940] // Singanallur Depot
-              : [11.0025, 76.9665]; // Gandhipuram Depot
+              : sid === "S33A"
+              ? [10.9980, 76.9830] // Sungam Depot
+              : sid === "S48"
+              ? [10.9820, 76.9870] // Ondipudur Depot
+              : [11.0065, 76.9780]; // Uppilipalayam Depot
 
           if (originCoord) {
             L.polyline([nearestDepotCoord, originCoord], {
@@ -176,12 +209,13 @@ export default function LeafletNetworkMap({
         }
       }
 
-      // Major Depot Hub Lines & Labels
+      // Major Depot Hub Labels
       const depots = [
         { name: "Ukkadam Depot", lat: 10.9904, lon: 76.9608, color: "#f59e0b" },
-        { name: "Gandhipuram Depot", lat: 11.0168, lon: 76.9672, color: "#38bdf8" },
-        { name: "Singanallur Depot", lat: 10.9760, lon: 76.9940, color: "#10b981" },
         { name: "Ondipudur Depot", lat: 10.9820, lon: 76.9870, color: "#a855f7" },
+        { name: "Sungam Depot", lat: 10.9980, lon: 76.9830, color: "#38bdf8" },
+        { name: "Uppilipalayam Depot", lat: 11.0065, lon: 76.9780, color: "#10b981" },
+        { name: "Marudhamalai Depot", lat: 11.0450, lon: 76.8520, color: "#ec4899" },
       ];
 
       depots.forEach((depot) => {
@@ -196,6 +230,7 @@ export default function LeafletNetworkMap({
         L.marker([depot.lat, depot.lon], { icon: depotLabel }).addTo(map);
       });
 
+      // Auto-fit bounds around the network
       if (allCoords.length > 1) {
         const bounds = L.latLngBounds(allCoords);
         map.fitBounds(bounds, { padding: [35, 35] });
@@ -212,7 +247,12 @@ export default function LeafletNetworkMap({
   }, [selectedService, routeForecasts, stopCoords, stopNames, routeGeometry, routeStartCoords]);
 
   return (
-    <div className="relative w-full h-[450px] rounded-2xl overflow-hidden border border-[#6B8D8A]/30 shadow-md isolate z-10">
+    <div
+      style={{ height: height || "450px" }}
+      className={`relative w-full overflow-hidden border border-[#6B8D8A]/30 shadow-md isolate z-10 ${
+        className !== undefined ? className : "h-[450px] rounded-2xl"
+      }`}
+    >
       <div ref={mapContainerRef} className="w-full h-full" />
     </div>
   );

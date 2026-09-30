@@ -33,9 +33,6 @@ export default function AllocationAuditLog({
             <Clock className="w-4 h-4 text-amber-400" />
             Smart Fleet Dispatch Audit Log
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Immutable log of all authority bus allocations with officer timestamp
-          </p>
         </div>
 
         <div className="relative">
@@ -108,7 +105,9 @@ export default function AllocationAuditLog({
                   <td className="py-3 px-3 text-right">
                     <span className="inline-flex items-center gap-1 text-amber-300 font-medium text-[11px]">
                       <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                      {item.allocated_by}
+                      {item.allocated_by && !item.allocated_by.toLowerCase().includes("rajesh")
+                        ? item.allocated_by
+                        : "Ravi"}
                     </span>
                   </td>
                 </tr>

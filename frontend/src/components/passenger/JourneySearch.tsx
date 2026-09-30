@@ -1,5 +1,26 @@
 "use client";
 
+/**
+ * RideCast - Journey Search Form Component
+ * =========================================
+ * Form enabling passengers to select:
+ * - Origin / Boarding bus stop.
+ * - Destination / Alighting bus stop.
+ * - Swap button to quickly reverse journey direction.
+ * - Travel date (with shortcut chips for Today, Tomorrow, and Weekend).
+ * - Departure time window (6 standardized shifts).
+ * - Submission trigger running the LSTM inference forecast.
+ * 
+ * Key Concepts for Beginners:
+ * ---------------------------
+ * 1. Controlled Form Inputs:
+ *    - React state variables (`fromStop`, `toStop`, `travelDate`, `timeSlot`) drive the inputs.
+ *    - `onChange` events update the parent component's state.
+ * 
+ * 2. Asynchronous Loading State:
+ *    - When `loading === true`, disables button and displays a rotating CSS spinner.
+ */
+
 import React, { useState } from "react";
 import { ArrowUpDown, Calendar, Clock, MapPin, Search, Sparkles } from "lucide-react";
 import { Stop, RouteMeta } from "@/lib/types";
@@ -21,17 +42,17 @@ interface JourneySearchProps {
 }
 
 const TIME_SLOTS_OPTIONS = [
-  { label: "06:00 – 08:00 (Early Morning)", value: "06:25" },
-  { label: "08:00 – 10:00 (Morning Peak)", value: "08:25" },
-  { label: "10:00 – 12:00 (Late Morning)", value: "10:25" },
-  { label: "12:00 – 14:00 (Midday)", value: "12:25" },
-  { label: "14:00 – 16:00 (Afternoon)", value: "14:25" },
-  { label: "16:00 – 20:00 (Evening Peak)", value: "17:00" },
+  { label: "06:00 AM – 08:00 AM (Early Morning)", value: "06:25" },
+  { label: "08:00 AM – 10:00 AM (Morning Peak)", value: "08:25" },
+  { label: "10:00 AM – 12:00 PM (Late Morning)", value: "10:25" },
+  { label: "12:00 PM – 02:00 PM (Midday Transit)", value: "12:25" },
+  { label: "02:00 PM – 04:00 PM (Afternoon Window)", value: "14:25" },
+  { label: "04:00 PM – 08:00 PM (Evening Peak)", value: "17:00" },
+  { label: "08:00 PM – 06:00 AM (Night Service)", value: "21:00" },
 ];
 
 export default function JourneySearch({
   stops,
-  routes,
   fromStop,
   setFromStop,
   toStop,
@@ -43,21 +64,18 @@ export default function JourneySearch({
   onSearch,
   loading,
 }: JourneySearchProps) {
-  const [fromSearch, setFromSearch] = useState("");
-  const [toSearch, setToSearch] = useState("");
-
+  // Swaps boarding and alighting stops
   const handleSwap = () => {
     const temp = fromStop;
     setFromStop(toStop);
     setToStop(temp);
   };
 
-  // Date Quick Chips
+  // Date Quick Chips calculation
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // Next Saturday
   const nextWeekend = new Date(today);
   nextWeekend.setDate(today.getDate() + ((6 - today.getDay() + 7) % 7 || 7));
 
@@ -87,7 +105,7 @@ export default function JourneySearch({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        {/* Origin Stop */}
+        {/* Origin Stop Selector */}
         <div className="md:col-span-5 relative">
           <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-emerald-400" />
@@ -100,25 +118,25 @@ export default function JourneySearch({
           >
             {stops.map((s) => (
               <option key={s.stop_id} value={s.stop_id}>
-                {s.stop_name} ({s.stop_id})
+                {s.stop_name}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Swap Button */}
+        {/* Swap Origin / Destination Button */}
         <div className="md:col-span-2 flex items-end justify-center pb-1">
           <button
             type="button"
             onClick={handleSwap}
-            className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-sky-400 border border-slate-700 flex items-center justify-center transition-all shadow-md active:scale-95"
+            className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-sky-400 border border-slate-700 flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer"
             title="Swap Origin and Destination"
           >
             <ArrowUpDown className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Destination Stop */}
+        {/* Destination Stop Selector */}
         <div className="md:col-span-5 relative">
           <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-rose-400" />
@@ -131,7 +149,7 @@ export default function JourneySearch({
           >
             {stops.map((s) => (
               <option key={s.stop_id} value={s.stop_id}>
-                {s.stop_name} ({s.stop_id})
+                {s.stop_name}
               </option>
             ))}
           </select>
@@ -147,12 +165,12 @@ export default function JourneySearch({
               <Calendar className="w-3.5 h-3.5 text-sky-400" />
               Travel Date
             </label>
-            {/* Quick date chips */}
+            {/* Quick Date Chips */}
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setDateChip(today)}
-                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
                   travelDate === formatDate(today)
                     ? "bg-sky-500 text-slate-950 font-bold"
                     : "bg-slate-800 text-slate-400 hover:text-slate-200"
@@ -163,7 +181,7 @@ export default function JourneySearch({
               <button
                 type="button"
                 onClick={() => setDateChip(tomorrow)}
-                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
                   travelDate === formatDate(tomorrow)
                     ? "bg-sky-500 text-slate-950 font-bold"
                     : "bg-slate-800 text-slate-400 hover:text-slate-200"
@@ -174,7 +192,7 @@ export default function JourneySearch({
               <button
                 type="button"
                 onClick={() => setDateChip(nextWeekend)}
-                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
                   travelDate === formatDate(nextWeekend)
                     ? "bg-sky-500 text-slate-950 font-bold"
                     : "bg-slate-800 text-slate-400 hover:text-slate-200"
@@ -188,7 +206,7 @@ export default function JourneySearch({
             type="date"
             value={travelDate}
             onChange={(e) => setTravelDate(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 text-sm text-slate-100 focus:outline-none focus:border-sky-400"
+            className="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 text-sm text-slate-100 focus:outline-none focus:border-sky-400 cursor-pointer"
           />
         </div>
 
@@ -212,12 +230,12 @@ export default function JourneySearch({
         </div>
       </div>
 
-      {/* Action Button */}
+      {/* Action Submit Button */}
       <div className="mt-5 flex justify-end">
         <button
           onClick={onSearch}
           disabled={loading}
-          className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-amber-400 hover:from-sky-400 hover:to-amber-300 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 transition-all transform active:scale-98 disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-amber-400 hover:from-sky-400 hover:to-amber-300 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 transition-all transform active:scale-98 disabled:opacity-50 cursor-pointer"
         >
           {loading ? (
             <>

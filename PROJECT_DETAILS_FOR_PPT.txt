@@ -93,7 +93,7 @@ A. SQLite Relational Tables (Stored in `auth/` directory):
      • source_depot TEXT NOT NULL     (e.g., 'Ukkadam Depot')
      • distance_km  REAL NOT NULL     (Haversine distance from depot to start)
      • reason       TEXT NOT NULL     (e.g., 'Heavy morning commuter surge')
-     • allocated_by TEXT NOT NULL     (Default: 'Officer Rajesh Kumar')
+     • allocated_by TEXT NOT NULL     (Default: 'Ravi')
      • timestamp    TEXT NOT NULL     (Timestamp: 'YYYY-MM-DD HH:MM:SS')
 
   3. `feedback` Table (Passenger Model Feedback):

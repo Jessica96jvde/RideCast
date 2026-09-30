@@ -1,11 +1,29 @@
 "use client";
 
+/**
+ * RideCast - System Calendar Component
+ * =====================================
+ * Custom calendar interface allowing passengers to pick travel dates:
+ * - Highlights a 7-day active forecasting window.
+ * - Supports month-by-month navigation (prev/next).
+ * - Accurately computes day cells, overflow days from adjacent months, and current day dot markers.
+ * 
+ * Key Concepts for Beginners:
+ * ---------------------------
+ * 1. Date Math in JavaScript:
+ *    - `new Date(year, month + 1, 0).getDate()` returns the total number of days in `month`.
+ *    - `new Date(year, month, 1).getDay()` returns the weekday index (0 for Sunday).
+ * 
+ * 2. 7-Day Window:
+ *    - Generates a `Set` of the next 7 valid dates for LSTM sequence prediction.
+ */
+
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface SystemCalendarProps {
-  selectedDate: string; // YYYY-MM-DD
+  selectedDate: string; // ISO format string: YYYY-MM-DD
   onSelectDate: (dateStr: string) => void;
 }
 
@@ -31,7 +49,7 @@ export default function SystemCalendar({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // 7-day selectable prediction window
+  // Build a Set of 7 active forecast dates starting from today
   const selectableDateSet = new Set<string>();
   for (let i = 0; i < 7; i++) {
     const d = new Date(today);
@@ -39,6 +57,7 @@ export default function SystemCalendar({
     selectableDateSet.add(formatDate(d));
   }
 
+  // Month navigation handlers
   const handlePrevMonth = () => {
     if (currentMonth === 0) {
       setCurrentMonth(11);
@@ -57,7 +76,7 @@ export default function SystemCalendar({
     }
   };
 
-  // Compute grid dates
+  // Compute calendar grid dimensions
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
   const startWeekday = firstDayOfMonth.getDay(); // 0 = SUN, 1 = MON, ... 6 = SAT
   const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -71,7 +90,7 @@ export default function SystemCalendar({
 
   const cells: CalendarCell[] = [];
 
-  // Previous month overflow days
+  // 1. Previous month overflow days
   for (let i = startWeekday - 1; i >= 0; i--) {
     const day = daysInPrevMonth - i;
     const prevDate = new Date(currentYear, currentMonth - 1, day);
@@ -82,7 +101,7 @@ export default function SystemCalendar({
     });
   }
 
-  // Current month days
+  // 2. Current month days
   for (let d = 1; d <= daysInCurrentMonth; d++) {
     const currDate = new Date(currentYear, currentMonth, d);
     cells.push({
@@ -92,7 +111,7 @@ export default function SystemCalendar({
     });
   }
 
-  // Next month overflow days (fill up to 35 or 42 cells)
+  // 3. Next month overflow days
   const totalGridSize = cells.length > 35 ? 42 : 35;
   const remaining = totalGridSize - cells.length;
   for (let d = 1; d <= remaining; d++) {
@@ -109,18 +128,15 @@ export default function SystemCalendar({
 
   return (
     <div className="w-full bg-[#1f2329] text-[#EDDECB] rounded-3xl p-4 sm:p-5 shadow-2xl border border-[#6B8D8A]/30 select-none">
-      {/* ── TOP HEADER (CALENDAR & < MMM YY >) ── */}
+      {/* ── TOP HEADER (CALENDAR & MONTH NAV) ── */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
           <span className="text-xs font-black text-[#EDDECB] uppercase tracking-wider">
             CALENDAR
           </span>
-          <span className="text-[10px] font-bold text-[#F3B763] bg-[#F3B763]/15 border border-[#F3B763]/30 px-2 py-0.5 rounded-full">
-            7 Days Active
-          </span>
         </div>
 
-        {/* Month Navigation */}
+        {/* Month Navigation Buttons */}
         <div className="flex items-center gap-1 text-xs font-black text-[#F3B763] tracking-wider">
           <button
             type="button"
@@ -144,7 +160,7 @@ export default function SystemCalendar({
         </div>
       </div>
 
-      {/* ── WEEKDAY HEADERS (SUN MON TUE WED THU FRI SAT) ── */}
+      {/* ── WEEKDAY LABELS (SUN MON TUE WED THU FRI SAT) ── */}
       <div className="grid grid-cols-7 text-center mb-1.5">
         {WEEKDAYS.map((day) => (
           <div
@@ -156,7 +172,7 @@ export default function SystemCalendar({
         ))}
       </div>
 
-      {/* ── CALENDAR DAYS GRID (7-Day Selectable Highlight) ── */}
+      {/* ── CALENDAR DAYS GRID ── */}
       <div className="grid grid-cols-7 gap-x-1 gap-y-0.5 text-center">
         {cells.map((cell, idx) => {
           const isSelected = selectedDate === cell.dateStr;
@@ -189,7 +205,7 @@ export default function SystemCalendar({
                 {cell.dayNum}
               </button>
 
-              {/* Dot indicator under today / active */}
+              {/* Indicator dot under today / active day */}
               <div className="h-1 flex items-center justify-center mt-0.5">
                 {isToday && !isSelected ? (
                   <span className="w-1.5 h-1.5 rounded-full bg-[#F3B763]"></span>

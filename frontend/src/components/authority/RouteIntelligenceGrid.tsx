@@ -18,7 +18,7 @@ import { formatNumber } from "@/lib/utils";
 
 interface RouteIntelligenceGridProps {
   routes: Record<string, AuthorityRouteForecast>;
-  onOpenAllocate: (serviceId: string) => void;
+  onOpenAllocate: (serviceId: string, slotId?: string, departureTime?: string) => void;
   loading: boolean;
 }
 

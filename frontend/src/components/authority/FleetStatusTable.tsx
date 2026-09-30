@@ -22,10 +22,7 @@ export default function FleetStatusTable({
   const filteredFleet = fleet.filter((bus) => {
     const matchesDepot = filterDepot === "all" || bus.depot_name === filterDepot;
     const matchesStatus = filterStatus === "all" || bus.status === filterStatus;
-    const matchesSearch =
-      bus.bus_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bus.bus_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bus.depot_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = bus.bus_number.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesDepot && matchesStatus && matchesSearch;
   });
 
@@ -51,7 +48,7 @@ export default function FleetStatusTable({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search bus ID / number..."
+              placeholder="Search vehicle number..."
               className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-400"
             />
           </div>
@@ -88,10 +85,8 @@ export default function FleetStatusTable({
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/40">
-              <th className="py-2.5 px-3 font-semibold">Bus ID</th>
               <th className="py-2.5 px-3 font-semibold">Vehicle Number</th>
               <th className="py-2.5 px-3 font-semibold">Home Depot</th>
-              <th className="py-2.5 px-3 font-semibold">Capacity</th>
               <th className="py-2.5 px-3 font-semibold">Fuel Engine</th>
               <th className="py-2.5 px-3 font-semibold text-right">Current Status</th>
             </tr>
@@ -99,13 +94,13 @@ export default function FleetStatusTable({
           <tbody className="divide-y divide-slate-800/60">
             {loading ? (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-slate-500">
+                <td colSpan={4} className="text-center py-8 text-slate-500">
                   Loading fleet data...
                 </td>
               </tr>
             ) : filteredFleet.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-slate-500">
+                <td colSpan={4} className="text-center py-8 text-slate-500">
                   No matching fleet units found.
                 </td>
               </tr>
@@ -116,16 +111,10 @@ export default function FleetStatusTable({
                   className="hover:bg-slate-800/40 transition-colors"
                 >
                   <td className="py-3 px-3 font-extrabold text-slate-100 font-mono">
-                    {bus.bus_id}
-                  </td>
-                  <td className="py-3 px-3 text-slate-300 font-mono">
                     {bus.bus_number}
                   </td>
                   <td className="py-3 px-3 text-slate-300">
                     {bus.depot_name}
-                  </td>
-                  <td className="py-3 px-3 text-slate-300">
-                    {bus.capacity} seats
                   </td>
                   <td className="py-3 px-3">
                     <span className="flex items-center gap-1 text-slate-300">

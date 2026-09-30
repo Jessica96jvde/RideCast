@@ -1,3 +1,15 @@
+"""
+RideCast - Transport Authority Operations REST Router
+=====================================================
+Provides API endpoints for the Transport Authority Portal:
+- Network-wide executive overview and key performance indicators (KPIs).
+- Route-level passenger demand forecasting and crowd congestion alerts.
+- Smart nearest-bus recommendations based on Haversine distance.
+- Bus dispatch allocation execution and audit logging in SQLite.
+- Live fleet inventory status (Idle vs Allocated).
+- PDF intelligence report generation and download.
+"""
+
 from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel
 import pandas as pd
@@ -16,16 +28,23 @@ router = APIRouter(prefix="/api/authority", tags=["authority"])
 
 
 class AllocationRequest(BaseModel):
+    """Payload sent by the authority UI when dispatching a bus to a route."""
     date: str
     service_id: str
     bus_id: str
     reason: str
-    allocated_by: Optional[str] = "Ravi (Transport Authority)"
+    allocated_by: Optional[str] = "Ravi"
 
 
 @router.get("/overview")
 def get_authority_overview(date: str = Query(...)):
-    """Aggregated executive overview for authority dashboard."""
+    """
+    Computes aggregated network KPIs across all routes for the executive dashboard:
+    - Total forecasted vs scheduled baseline passengers.
+    - Overall network crowd ratio (%).
+    - Number of extra buses recommended to eliminate congestion.
+    - Fleet inventory counts (total, idle, allocated).
+    """
     target_dt = pd.Timestamp(date)
     routes_forecast = predict_all_routes_authority(target_dt)
 
@@ -56,13 +75,22 @@ def get_authority_overview(date: str = Query(...)):
 
 @router.get("/route/{service_id}")
 def get_route_forecast(service_id: str, date: str = Query(...)):
+    """Returns detailed demand breakdown and trip slot occupancies for a specific route."""
     target_dt = pd.Timestamp(date)
     forecast = predict_route_authority(service_id, target_dt)
     return forecast
 
 
 @router.get("/recommendations")
-def get_bus_recommendations(service_id: str = Query(...), date: str = Query(...), capacity: int = Query(50)):
+def get_bus_recommendations(
+    service_id: str = Query(...),
+    date: str = Query(...),
+    capacity: int = Query(50)
+):
+    """
+    Ranks idle buses by Haversine distance to the starting point of `service_id`.
+    Returns the closest candidate buses to assist the dispatcher.
+    """
     recommendations = recommend_buses(service_id, date, capacity)
     return {
         "service_id": service_id,
@@ -73,12 +101,16 @@ def get_bus_recommendations(service_id: str = Query(...), date: str = Query(...)
 
 @router.post("/allocate")
 def allocate_bus(req: AllocationRequest):
+    """
+    Executes a bus dispatch, marking the bus as allocated for the date
+    and persisting the audit record into the SQLite database.
+    """
     success = execute_allocation(
         date_str=req.date,
         service_id=req.service_id,
         bus_id=req.bus_id,
         reason=req.reason,
-        allocated_by=req.allocated_by or "Ravi (Transport Authority)"
+        allocated_by=req.allocated_by or "Ravi"
     )
     if not success:
         raise HTTPException(status_code=400, detail="Failed to allocate bus. Bus ID not found.")
@@ -92,6 +124,7 @@ def allocate_bus(req: AllocationRequest):
 
 @router.get("/allocations")
 def get_allocations(date: Optional[str] = None):
+    """Retrieves bus allocation history from SQLite, optionally filtered by date."""
     if date:
         df = get_allocations_for_date(date)
     else:
@@ -101,12 +134,17 @@ def get_allocations(date: Optional[str] = None):
 
 @router.get("/fleet")
 def get_fleet_status(date: str = Query(...)):
+    """Returns live fleet inventory and status (Idle/Allocated) for the given date."""
     df = get_fleet_df(date)
     return df.to_dict(orient="records")
 
 
 @router.get("/export-pdf")
 def export_authority_pdf(date: str = Query(...), service_id: str = Query("All Routes")):
+    """
+    Generates and returns an executive PDF intelligence report for download.
+    Sets the 'Content-Disposition' header to prompt browser file download.
+    """
     target_dt = pd.Timestamp(date)
     forecast_data = predict_all_routes_authority(target_dt)
     alloc_df = get_allocation_history()

@@ -44,9 +44,9 @@ HISTORY_FILE = MODEL_DIR / "training_history.npy"
 
 LSTM_UNITS  = 64
 DROPOUT     = 0.2
-EPOCHS      = 100
-BATCH_SIZE  = 32
-PATIENCE    = 10
+EPOCHS      = 35
+BATCH_SIZE  = 64
+PATIENCE    = 6
 
 
 # ==================================================

@@ -1,5 +1,29 @@
 "use client";
 
+/**
+ * RideCast - Leaflet Passenger Journey Map Component
+ * ===================================================
+ * Renders an interactive OpenStreetMap Leaflet map showing the exact bus route
+ * between the passenger's selected boarding and alighting stops.
+ * 
+ * Key Concepts for Beginners:
+ * ---------------------------
+ * 1. Leaflet & OpenStreetMap:
+ *    - Leaflet is a popular open-source JavaScript library for mobile-friendly interactive maps.
+ *    - OpenStreetMap provides free raster map tile layers (`https://{s}.tile.openstreetmap.org/...`).
+ * 
+ * 2. Next.js Dynamic SSR Safety (`typeof window !== "undefined"`):
+ *    - Leaflet relies on browser-only objects (`window`, `document`).
+ *    - We dynamically import `leaflet` inside `useEffect()` so it only loads on the client side.
+ * 
+ * 3. OSRM Road Geometry & Snapping (`fetchRoadRoute`):
+ *    - Open Source Routing Machine (OSRM) queries real road geometries connecting GPS stops.
+ *    - `snapPointToRoad` projects intermediate stop markers directly onto the asphalt polyline.
+ * 
+ * 4. Auto-Fit Bounds (`map.fitBounds`):
+ *    - Automatically calculates the minimum bounding box containing all stops and zooms the map.
+ */
+
 import React, { useEffect, useRef } from "react";
 import type { Map as LeafletMap } from "leaflet";
 
@@ -19,8 +43,12 @@ interface LeafletJourneyMapProps {
     }
   >;
   height?: string;
+  className?: string;
 }
 
+/**
+ * Snaps a stop GPS coordinate to the nearest vertex on the road polyline.
+ */
 function snapPointToRoad(pt: [number, number], roadLine: [number, number][]): [number, number] {
   if (!roadLine || roadLine.length === 0) return pt;
   let minDistSq = Infinity;
@@ -35,8 +63,12 @@ function snapPointToRoad(pt: [number, number], roadLine: [number, number][]): [n
   return bestPt;
 }
 
+// In-memory cache for fetched OSRM road routes to prevent redundant network calls
 const roadCache = new Map<string, [number, number][]>();
 
+/**
+ * Queries OSRM public routing API to fetch turn-by-turn road geometries between stops.
+ */
 async function fetchRoadRoute(coords: [number, number][]): Promise<[number, number][]> {
   if (coords.length < 2) return coords;
   const cacheKey = coords.map((c) => `${c[0].toFixed(4)},${c[1].toFixed(4)}`).join(";");
@@ -46,6 +78,7 @@ async function fetchRoadRoute(coords: [number, number][]): Promise<[number, numb
 
   try {
     let sampled = coords;
+    // Downsample very long routes to stay within OSRM URL limits
     if (coords.length > 12) {
       const step = (coords.length - 1) / 10;
       sampled = [coords[0]];
@@ -83,6 +116,7 @@ export default function LeafletJourneyMap({
   stopNames,
   routeGeometry,
   height = "320px",
+  className = "",
 }: LeafletJourneyMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
@@ -92,9 +126,11 @@ export default function LeafletJourneyMap({
 
     let isMounted = true;
 
+    // Dynamically load leaflet on the client
     import("leaflet").then(async (L) => {
       if (!isMounted || !mapContainerRef.current) return;
 
+      // Clean up previous map instance if re-rendering
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -112,7 +148,7 @@ export default function LeafletJourneyMap({
             ])
           : defaultCenter;
 
-      // Create map with full zoom freedom
+      // Initialize Leaflet Map
       const map = L.map(mapContainerRef.current, {
         center: initialCenter,
         zoom: 13,
@@ -124,7 +160,7 @@ export default function LeafletJourneyMap({
 
       mapInstanceRef.current = map;
 
-      // OpenStreetMap high-definition free tiles without watermark
+      // OpenStreetMap Free Tile Layer
       L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
@@ -137,7 +173,7 @@ export default function LeafletJourneyMap({
 
       const allCoords: [number, number][] = [];
       
-      // Look up geometry with flexible route ID prefixing and stop searching
+      // Look up candidate geometry for the route
       const candidateKeys = serviceId
         ? [serviceId, serviceId.toUpperCase(), `S${serviceId}`, serviceId.replace(/^S/i, "")]
         : Object.keys(routeGeometry);
@@ -173,7 +209,7 @@ export default function LeafletJourneyMap({
           .map((s) => stopCoords[s]);
       }
 
-      // Fallback: If rawCoords is empty or only 1 stop, connect fromCoord directly to toCoord
+      // Fallback: If rawCoords is empty, connect fromCoord directly to toCoord
       if (rawCoords.length < 2 && fromCoord && toCoord) {
         rawCoords = [fromCoord, toCoord];
       }
@@ -181,7 +217,7 @@ export default function LeafletJourneyMap({
       if (rawCoords.length >= 2) {
         allCoords.push(...rawCoords);
 
-        // Synchronously draw baseline polyline so there is NEVER a visible gap
+        // 1. Synchronously render baseline straight-line polyline
         const baselineHalo = L.polyline(rawCoords, {
           color: lineColor,
           weight: 10,
@@ -201,7 +237,7 @@ export default function LeafletJourneyMap({
 
         const dotMarkers: any[] = [];
 
-        // Render initial dots
+        // 2. Render intermediate stop dots
         if (segmentStops.length > 2) {
           segmentStops.slice(1, -1).forEach((s, idx) => {
             const pt = stopCoords[s];
@@ -227,7 +263,7 @@ export default function LeafletJourneyMap({
           });
         }
 
-        // Fetch high-precision OSRM asphalt street routing and snap all dots onto the road line
+        // 3. Asynchronously upgrade to smooth OSRM road coordinates
         fetchRoadRoute(rawCoords).then((roadPoints) => {
           if (!isMounted || roadPoints.length < 2) return;
           map.removeLayer(baselineHalo);
@@ -252,7 +288,7 @@ export default function LeafletJourneyMap({
             .addTo(map)
             .bindTooltip(`Bus Service Route Corridor`, { sticky: true });
 
-          // Snap each dot marker directly onto the road polyline
+          // Snap stop markers to the road curve
           dotMarkers.forEach(({ marker, originalPt }) => {
             const snappedPt = snapPointToRoad(originalPt, roadPoints);
             marker.setLatLng(snappedPt);
@@ -263,7 +299,7 @@ export default function LeafletJourneyMap({
       const fromName = stopNames[fromStopId] || fromStopId;
       const toName = stopNames[toStopId] || toStopId;
 
-      // Boarding Point (Origin Marker with full stop name)
+      // Boarding Point (Origin Marker)
       if (fromCoord) {
         allCoords.push(fromCoord);
         const startIcon = L.divIcon({
@@ -281,7 +317,7 @@ export default function LeafletJourneyMap({
           );
       }
 
-      // Alighting Point (Destination Marker with full stop name)
+      // Alighting Point (Destination Marker)
       if (toCoord) {
         allCoords.push(toCoord);
         const endIcon = L.divIcon({
@@ -299,7 +335,7 @@ export default function LeafletJourneyMap({
           );
       }
 
-      // Auto-fit bounds tightly with bounded zoom
+      // Auto-fit map viewport to contain all coordinates
       if (allCoords.length > 1) {
         const bounds = L.latLngBounds(allCoords);
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
@@ -318,7 +354,7 @@ export default function LeafletJourneyMap({
   return (
     <div
       style={{ height }}
-      className="relative w-full rounded-2xl overflow-hidden border border-[#6B8D8A]/30 shadow-md isolate z-10"
+      className={`relative w-full overflow-hidden isolate z-10 ${className}`}
     >
       <div ref={mapContainerRef} className="w-full h-full" />
     </div>

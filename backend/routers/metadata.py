@@ -1,19 +1,34 @@
+"""
+RideCast - Transit Network Metadata REST Router
+===============================================
+Provides API endpoints for retrieving static transit network data including bus stops,
+routes, schedules, timetable departures, and map geospatial coordinates.
+
+Endpoints:
+- GET /api/stops                  -> List of all bus stops with GPS lat/lon.
+- GET /api/routes                 -> List of all transit routes with metadata.
+- GET /api/services-between       -> Finds bus lines connecting two stops.
+- GET /api/timetable/{service_id} -> Daily scheduled departure times.
+- GET /api/time-slots             -> 6 daily commuter time slot windows.
+- GET /api/map/data               -> Complete map coordinates and route polylines.
+"""
+
 from fastapi import APIRouter
 import pandas as pd
 from typing import List, Dict, Any
 
-from backend.config import ROUTE_INFO, ROUTE_START_COORDS, TIME_SLOTS
+from backend.config import ROUTE_INFO, ROUTE_START_COORDS, TIME_SLOTS, STOP_COORDS, SERVICE_COLORS
 from backend.services.model_service import (
     get_stop_master_df, get_route_master_df, get_route_stops_df,
     get_route_timetable_df, find_services
 )
-from utils.map_utils import STOP_COORDS, SERVICE_COLORS
 
 router = APIRouter(prefix="/api", tags=["metadata"])
 
 
 @router.get("/stops")
 def get_stops():
+    """Returns all 93 bus stops with names, GPS coordinates, and corridor areas."""
     df = get_stop_master_df()
     stops = []
     for _, row in df.iterrows():
@@ -31,6 +46,7 @@ def get_stops():
 
 @router.get("/routes")
 def get_routes():
+    """Returns all monitored transit routes with distances, durations, and brand colors."""
     df = get_route_master_df()
     routes = []
     for _, row in df.iterrows():
@@ -55,12 +71,17 @@ def get_routes():
 
 @router.get("/services-between")
 def get_services_between(from_stop: str, to_stop: str):
+    """
+    Finds which bus services travel directly between `from_stop` and `to_stop`.
+    Used by the passenger journey search form to auto-select or filter routes.
+    """
     services = find_services(from_stop, to_stop)
     return {"services": services}
 
 
 @router.get("/timetable/{service_id}")
 def get_timetable(service_id: str):
+    """Returns scheduled departure times for a specific bus service."""
     tt = get_route_timetable_df()
     times = (
         tt[tt["service_id"] == service_id]["departure_time"]
@@ -73,12 +94,16 @@ def get_timetable(service_id: str):
 
 @router.get("/time-slots")
 def get_time_slots():
+    """Returns the 6 standardized daily commuter time slot windows."""
     return TIME_SLOTS
 
 
 @router.get("/map/data")
 def get_map_metadata():
-    """Return stop coordinates and route colors for client-side rendering."""
+    """
+    Returns complete geospatial coordinates, stop names, brand colors,
+    and route polyline coordinates required for client-side Leaflet map rendering.
+    """
     df_stops = get_stop_master_df()
     names = dict(zip(df_stops["stop_id"], df_stops["stop_name"]))
 

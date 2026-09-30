@@ -57,10 +57,10 @@ export default function LoginModal({
           </div>
           <div>
             <h3 className="text-lg font-black text-[#EDDECB]">
-              Authority Operations Login
+              Authority Login
             </h3>
-            <p className="text-xs text-[#B5C3C4] font-medium">
-              Coimbatore City Transport Management System
+            <p className="text-xs text-[#B5C3C4] font-medium mt-0.5">
+              Skip the Crowd. Plan Your Ride.
             </p>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default function LoginModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-black text-[#EDDECB] mb-1.5">
-              Officer Username
+              Username
             </label>
             <div className="relative">
               <User className="absolute left-3.5 top-3 w-4 h-4 text-[#B5C3C4]" />
@@ -116,10 +116,10 @@ export default function LoginModal({
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Verifying Officer Credentials...
+                  Logging in...
                 </>
               ) : (
-                "Authorize & Enter Operations Portal"
+                "LOGIN"
               )}
             </button>
           </div>

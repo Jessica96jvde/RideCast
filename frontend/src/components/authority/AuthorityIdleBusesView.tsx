@@ -7,7 +7,7 @@ import { BusItem } from "@/lib/types";
 interface AuthorityIdleBusesViewProps {
   fleet: BusItem[];
   loading: boolean;
-  onOpenAllocate?: (serviceId: string) => void;
+  onOpenAllocate?: (serviceId: string, slotId?: string, departureTime?: string) => void;
 }
 
 export default function AuthorityIdleBusesView({
@@ -92,7 +92,6 @@ export default function AuthorityIdleBusesView({
                 <th className="py-3 px-4 font-black uppercase tracking-wider">Bus ID</th>
                 <th className="py-3 px-4 font-black uppercase tracking-wider">Vehicle Number</th>
                 <th className="py-3 px-4 font-black uppercase tracking-wider">Stationed Depot</th>
-                <th className="py-3 px-4 font-black uppercase tracking-wider">Capacity</th>
                 <th className="py-3 px-4 font-black uppercase tracking-wider">Engine / Fuel</th>
                 <th className="py-3 px-4 font-black uppercase tracking-wider text-right">Standby Status</th>
               </tr>
@@ -100,13 +99,13 @@ export default function AuthorityIdleBusesView({
             <tbody className="divide-y divide-[#6B8D8A]/15">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-[#B5C3C4]">
+                  <td colSpan={5} className="text-center py-8 text-[#B5C3C4]">
                     Loading idle fleet data...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-[#B5C3C4]">
+                  <td colSpan={5} className="text-center py-8 text-[#B5C3C4]">
                     No idle buses found for the selected filter.
                   </td>
                 </tr>
@@ -124,9 +123,6 @@ export default function AuthorityIdleBusesView({
                         <MapPin className="w-3.5 h-3.5 text-[#96BCBB]" />
                         <span>{bus.depot_name}</span>
                       </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-[#B5C3C4] font-bold">
-                      {bus.capacity} seats
                     </td>
                     <td className="py-3.5 px-4 text-[#B5C3C4]">
                       <div className="flex items-center gap-1.5">

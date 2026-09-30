@@ -1,7 +1,26 @@
 "use client";
 
+/**
+ * RideCast - Navigation Bar Component
+ * ====================================
+ * Header bar displaying the RideCast brand, live backend health status,
+ * tab switching between Passenger & Authority modes, and officer session controls.
+ * 
+ * Key Concepts for Beginners:
+ * ---------------------------
+ * 1. Props:
+ *    - Inputs passed from the parent (`page.tsx`) to control state (e.g. `currentTab`, `isLoggedIn`).
+ * 
+ * 2. Icons from `lucide-react`:
+ *    - Scalable vector icons (`Bus`, `ShieldAlert`, `Navigation`, `UserCheck`).
+ * 
+ * 3. Tailwind CSS Utility Classes:
+ *    - `sticky top-0`: Keeps the navbar pinned to the top while scrolling.
+ *    - `backdrop-blur-xl`: Creates an iOS-style translucent frosted glass effect.
+ */
+
 import React from "react";
-import { Bus, ShieldAlert, ShieldCheck, UserCheck, Sparkles, Navigation } from "lucide-react";
+import { Bus, ShieldAlert, ShieldCheck, UserCheck, Navigation } from "lucide-react";
 
 interface NavbarProps {
   currentTab: "passenger" | "authority";
@@ -23,7 +42,7 @@ export default function Navbar({
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-slate-950/75 backdrop-blur-xl transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand */}
+        {/* Brand Logo & Title */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-amber-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
             <Bus className="w-5 h-5 text-slate-950" />
@@ -38,12 +57,12 @@ export default function Navbar({
               </span>
             </div>
             <p className="text-[11px] text-slate-400 tracking-tight hidden sm:block">
-              Intelligent Bus Crowd Forecasting & Fleet Allocation
+              Skip the Crowd. Plan Your Ride.
             </p>
           </div>
         </div>
 
-        {/* Tab Switcher */}
+        {/* Primary View Tab Switcher */}
         <div className="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800/80 shadow-inner">
           <button
             onClick={() => setCurrentTab("passenger")}
@@ -54,7 +73,7 @@ export default function Navbar({
             }`}
           >
             <Navigation className="w-3.5 h-3.5" />
-            Passenger Portal
+            Plan Your Trip
           </button>
           <button
             onClick={() => {
@@ -79,9 +98,9 @@ export default function Navbar({
           </button>
         </div>
 
-        {/* Right Status & Auth */}
+        {/* Right Status & Authentication Controls */}
         <div className="flex items-center gap-3">
-          {/* API Health indicator */}
+          {/* Live API Health indicator */}
           <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] text-slate-400">
             <span
               className={`w-2 h-2 rounded-full ${
@@ -93,7 +112,7 @@ export default function Navbar({
             {apiHealthy ? "FastAPI Live" : "Connecting..."}
           </div>
 
-          {/* Auth Button */}
+          {/* Officer Login / Logout Button */}
           {isLoggedIn ? (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-medium">
@@ -114,7 +133,7 @@ export default function Navbar({
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs font-medium transition-all shadow-sm"
             >
               <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-              Authority Login
+              Login as Transport Authority
             </button>
           )}
         </div>

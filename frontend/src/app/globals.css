@@ -101,7 +101,6 @@
 .leaflet-container {
   background: #16191f !important;
   font-family: inherit !important;
-  border-radius: 1.25rem !important;
   z-index: 10 !important;
   isolation: isolate;
 }
@@ -116,4 +115,12 @@
 
 .leaflet-popup-tip {
   background: #1f2329 !important;
+}
+
+/* Hide Next.js dev indicator 'N' badge overlay */
+nextjs-portal,
+[data-nextjs-toast],
+[data-nextjs-dialog-overlay],
+#nextjs-dev-overlay {
+  display: none !important;
 }

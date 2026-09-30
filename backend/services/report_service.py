@@ -1,3 +1,25 @@
+"""
+RideCast - PDF Intelligence Report Generation Service
+=====================================================
+This module creates downloadable, professional PDF transit intelligence reports
+for Transport Authority executives and city planners using the Python `reportlab` library.
+
+Key Concepts for Beginners:
+---------------------------
+1. What is ReportLab Platypus?
+   - "Page Layout and Typography Using Scripts" (Platypus) is ReportLab's high-level document engine.
+   - You build a document as a list of "flowables" (Paragraphs, Tables, Spacers, Lines)
+     which the engine automatically paginates and renders into an A4 PDF.
+
+2. Document Structure:
+   - Header Block     -> Title, generation timestamp, accent horizontal line.
+   - Section 1 (KPIs) -> Total forecasted passengers, baseline network capacity, required extra buses.
+   - Section 2 (Routes)-> Tabular breakdown of normal vs predicted passengers per route.
+   - Section 3 (AI)   -> Bulleted explainable AI factors (weather, holidays, shift patterns).
+   - Section 4 (Audit) -> Smart bus dispatches recorded for this date.
+   - Section 5 (Fleet) -> Available depot inventory status.
+"""
+
 import io
 from datetime import datetime
 import pandas as pd
@@ -9,13 +31,16 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 )
 
+# ------------------------------------------------------------------------------
+# Typography Styles & Visual Palette
+# ------------------------------------------------------------------------------
 STYLES = getSampleStyleSheet()
 
-C_PRIMARY = colors.HexColor("#1e293b")
-C_ACCENT = colors.HexColor("#f59e0b")
-C_SKY = colors.HexColor("#38bdf8")
-C_MUTED = colors.HexColor("#64748b")
-C_DARK = colors.HexColor("#0f172a")
+C_PRIMARY = colors.HexColor("#1e293b")  # Dark Slate Blue
+C_ACCENT = colors.HexColor("#f59e0b")   # Amber Gold
+C_SKY = colors.HexColor("#38bdf8")      # Sky Cyan
+C_MUTED = colors.HexColor("#64748b")    # Cool Grey
+C_DARK = colors.HexColor("#0f172a")     # Deep Charcoal
 
 TITLE_STYLE = ParagraphStyle(
     "TitleStyle",
@@ -53,6 +78,7 @@ BODY_STYLE = ParagraphStyle(
     fontName="Helvetica"
 )
 
+# Standardized high-contrast table styling
 TABLE_STYLE_MAIN = TableStyle([
     ("BACKGROUND", (0, 0), (-1, 0), C_PRIMARY),
     ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
@@ -70,6 +96,7 @@ TABLE_STYLE_MAIN = TableStyle([
 
 
 def _header_block(title: str, subtitle: str) -> list:
+    """Generates the branded header block for the PDF."""
     return [
         Paragraph("RIDECAST - Transport Authority Intelligence Report", TITLE_STYLE),
         Paragraph(title, SECTION_STYLE),
@@ -85,7 +112,10 @@ def generate_authority_pdf(
     target_date_str: str,
     selected_route: str = "All Routes"
 ) -> bytes:
-    """Generate comprehensive authority intelligence report PDF."""
+    """
+    Assembles all metrics into a multi-page A4 PDF document in memory.
+    Returns the binary content (bytes) ready to be sent over HTTP.
+    """
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -100,7 +130,9 @@ def generate_authority_pdf(
     subtitle = f"Target Date: {target_date_str} | Scope: {selected_route}"
     story += _header_block("Daily Bus Demand Forecast & Fleet Allocation Summary", subtitle)
 
+    # --------------------------------------------------------------------------
     # 1. Executive Summary & KPIs
+    # --------------------------------------------------------------------------
     story.append(Paragraph("1. Executive Summary & KPIs", SECTION_STYLE))
     total_forecasted = sum(r["expected_passengers"] for r in forecast_data.values())
     total_normal = sum(r["normal_passengers"] for r in forecast_data.values())
@@ -119,7 +151,9 @@ def generate_authority_pdf(
     story.append(t_kpi)
     story.append(Spacer(1, 0.4 * cm))
 
-    # 2. Route Demand & Crowd Level
+    # --------------------------------------------------------------------------
+    # 2. Route Demand & Crowd Level Breakdown
+    # --------------------------------------------------------------------------
     story.append(Paragraph("2. Route Demand & Crowd Level Breakdown", SECTION_STYLE))
     route_table_data = [
         ["Service", "Route Name", "Normal Cap.", "Expected", "Crowd Level", "Extra Buses"]
@@ -140,7 +174,9 @@ def generate_authority_pdf(
     story.append(t_routes)
     story.append(Spacer(1, 0.4 * cm))
 
+    # --------------------------------------------------------------------------
     # 3. AI Factor Analysis & Dynamics
+    # --------------------------------------------------------------------------
     story.append(Paragraph("3. AI Factor Analysis & Commuter Dynamics", SECTION_STYLE))
     for sid, r in forecast_data.items():
         if selected_route != "All Routes" and sid != selected_route:
@@ -151,7 +187,9 @@ def generate_authority_pdf(
         story.append(Spacer(1, 0.15 * cm))
     story.append(Spacer(1, 0.25 * cm))
 
-    # 4. Bus Allocations
+    # --------------------------------------------------------------------------
+    # 4. Bus Allocations Executed
+    # --------------------------------------------------------------------------
     story.append(Paragraph("4. Smart Bus Allocations Executed", SECTION_STYLE))
     if not alloc_df.empty:
         date_allocs = alloc_df[alloc_df["date"] == target_date_str] if "date" in alloc_df.columns else alloc_df
@@ -177,7 +215,9 @@ def generate_authority_pdf(
         story.append(Paragraph("<i>No allocation records found in system database.</i>", BODY_STYLE))
     story.append(Spacer(1, 0.4 * cm))
 
+    # --------------------------------------------------------------------------
     # 5. Fleet Availability Status
+    # --------------------------------------------------------------------------
     story.append(Paragraph("5. Fleet Inventory & Depot Availability", SECTION_STYLE))
     if not fleet_df.empty:
         fleet_table_data = [
@@ -196,5 +236,6 @@ def generate_authority_pdf(
         t_fleet.setStyle(TABLE_STYLE_MAIN)
         story.append(t_fleet)
 
+    # Build and finalize the PDF in memory
     doc.build(story)
     return buf.getvalue()
